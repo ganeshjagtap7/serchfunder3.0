@@ -120,7 +120,7 @@ export default function ProfilePage() {
     return (
       <>
         <Navbar />
-        <main className="p-6 text-slate-200">Loading profile...</main>
+        <main className="p-6 text-muted-foreground">Loading profile...</main>
       </>
     );
   }
@@ -151,19 +151,19 @@ export default function ProfilePage() {
               className="h-16 w-16 rounded-full object-cover border border-slate-700"
             />
           ) : (
-            <div className="h-16 w-16 rounded-full bg-slate-800 flex items-center justify-center text-xl font-semibold">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-xl font-semibold text-muted-foreground">
               {(profile.full_name || "U").charAt(0).toUpperCase()}
             </div>
           )}
           <div className="space-y-2">
-            <label className="block text-sm text-slate-300">
+            <label className="block text-sm font-bold text-foreground">
               Profile picture
             </label>
             <input
               type="file"
               accept="image/*"
               onChange={handleAvatarChange}
-              className="text-sm text-slate-200"
+              className="text-sm text-muted-foreground"
             />
             {uploading && (
               <p className="text-xs text-slate-400">Uploading...</p>
@@ -173,11 +173,11 @@ export default function ProfilePage() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-300 mb-1">
+            <label className="block text-sm font-bold text-foreground mb-1">
               Full name
             </label>
             <input
-              className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               value={profile.full_name ?? ""}
               onChange={(e) =>
                 setProfile({ ...profile, full_name: e.target.value })
@@ -186,9 +186,9 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-300 mb-1">Bio</label>
+            <label className="block text-sm font-bold text-foreground mb-1">Bio</label>
             <textarea
-              className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               rows={4}
               value={profile.bio ?? ""}
               onChange={(e) =>
@@ -202,7 +202,7 @@ export default function ProfilePage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
           >
             {saving ? "Saving..." : "Save profile"}
           </button>

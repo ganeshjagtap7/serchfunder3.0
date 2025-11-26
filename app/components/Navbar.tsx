@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { Avatar } from "./ui/Avatar";
+import { Button } from "./ui/Button";
 
 type Profile = {
   id: string;
@@ -42,43 +44,50 @@ export default function Navbar() {
     (profile?.id ? profile.id.charAt(0).toUpperCase() : "U");
 
   return (
-    <nav className="w-full bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-      <Link href="/dashboard">
-        <h1 className="text-xl font-bold text-white cursor-pointer">
-          Searchfunder 2.0
-        </h1>
-      </Link>
-
-      <div className="flex items-center gap-4">
-        <Link href="/profile" className="flex items-center gap-2">
-          {profile?.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt="Avatar"
-              className="h-8 w-8 rounded-full object-cover border border-slate-700"
-            />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-semibold text-slate-100">
-              {initial}
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">S</span>
             </div>
-          )}
-          <span className="px-3 py-1 text-sm rounded-md bg-slate-800 hover:bg-slate-700 text-white">
-            Profile
-          </span>
-        </Link>
-        <Link
-  href="/groups"
-  className="px-3 py-1 text-sm rounded-md bg-slate-800 hover:bg-slate-700 text-white"
->
-  Groups
-</Link>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
+              Searchfunder
+            </h1>
+          </Link>
 
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 text-sm rounded-md bg-red-600 hover:bg-red-500 text-white"
-        >
-          Logout
-        </button>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-1">
+              <Link href="/groups">
+                <Button variant="ghost" size="sm">Groups</Button>
+              </Link>
+              <Link href="/messages">
+                <Button variant="ghost" size="sm">Messages</Button>
+              </Link>
+            </div>
+
+            <div className="h-6 w-px bg-border hidden md:block" />
+
+            <Link href="/profile" className="flex items-center gap-2 group">
+              <Avatar
+                src={profile?.avatar_url}
+                fallback={initial}
+                className="border-2 border-transparent group-hover:border-primary transition-colors"
+              />
+              <span className="hidden md:block text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Profile
+              </span>
+            </Link>
+
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          </div>
+        </div>
       </div>
     </nav>
   );

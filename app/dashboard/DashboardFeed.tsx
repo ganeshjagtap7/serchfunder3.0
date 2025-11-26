@@ -3,12 +3,24 @@
 import { useEffect, useState, FormEvent } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
+import { Avatar } from "@/app/components/ui/Avatar";
+import { Button } from "@/app/components/ui/Button";
+import { Icons } from "@/app/components/ui/Icons";
+
+type Profile = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+};
 
 type Post = {
   id: string;
   user_id: string;
   content: string;
   created_at: string;
+  profiles: Profile | null;
+  likes: { user_id: string }[];
+  comments: { count: number }[];
 };
 
 export default function DashboardFeed() {
@@ -17,18 +29,36 @@ export default function DashboardFeed() {
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const loadPosts = async () => {
     setLoading(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUserId(user?.id || null);
+
     const { data, error } = await supabase
       .from("posts")
-      .select("*")
+      .select(`
+        *,
+        profiles (
+          id,
+          full_name,
+          avatar_url
+        ),
+        likes (
+          user_id
+        ),
+        comments (
+          count
+        )
+      `)
       .order("created_at", { ascending: false });
 
     if (error) {
       setError(error.message);
     } else {
-      setPosts(data || []);
+      setPosts((data as any) || []);
     }
 
     setLoading(false);
@@ -64,18 +94,50 @@ export default function DashboardFeed() {
     if (error) {
       setError(error.message);
     } else if (data) {
-      setPosts((prev) => [data, ...prev]);
+      // Refresh posts to get the full object with profile
+      loadPosts();
       setContent("");
     }
 
     setPosting(false);
   };
 
+  const handleLike = async (postId: string, isLiked: boolean) => {
+    if (!currentUserId) return;
+
+    // Optimistic update
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            likes: isLiked
+              ? p.likes.filter((l) => l.user_id !== currentUserId)
+              : [...p.likes, { user_id: currentUserId }],
+          };
+        }
+        return p;
+      })
+    );
+
+    if (isLiked) {
+      await supabase
+        .from("likes")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", currentUserId);
+    } else {
+      await supabase
+        .from("likes")
+        .insert({ post_id: postId, user_id: currentUserId });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleCreatePost} className="space-y-3">
         <textarea
-          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+          className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           rows={3}
           placeholder="Share something with the community..."
           value={content}
@@ -85,37 +147,68 @@ export default function DashboardFeed() {
         <button
           type="submit"
           disabled={posting}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           {posting ? "Posting..." : "Post"}
         </button>
       </form>
 
-      <div className="border-t border-slate-800 pt-4 space-y-4">
+      <div className="border-t border-border pt-4 space-y-4">
         {loading ? (
-          <p className="text-slate-400 text-sm">Loading posts...</p>
+          <p className="text-muted-foreground text-sm">Loading posts...</p>
         ) : posts.length === 0 ? (
-          <p className="text-slate-400 text-sm">No posts yet. Be the first!</p>
+          <p className="text-muted-foreground text-sm">No posts yet. Be the first!</p>
         ) : (
-          posts.map((post) => (
-            <div
-              key={post.id}
-              className="rounded-lg border border-slate-800 bg-slate-900 p-4 space-y-2"
-            >
-              <p className="text-sm text-slate-100 whitespace-pre-wrap">
-                {post.content}
-              </p>
-              <p className="text-xs text-slate-500">
-                {new Date(post.created_at).toLocaleString()}
-              </p>
-              <Link
-                href={`/posts/${post.id}`}
-                className="inline-block text-xs text-indigo-400 hover:text-indigo-300"
+          posts.map((post) => {
+            const isLiked = post.likes?.some((l) => l.user_id === currentUserId);
+            const likeCount = post.likes?.length || 0;
+            const commentCount = post.comments?.[0]?.count || 0;
+            const authorName = post.profiles?.full_name || `User ${post.user_id.slice(0, 6)}`;
+            const authorAvatar = post.profiles?.avatar_url;
+            const authorInitial = authorName.charAt(0).toUpperCase();
+
+            return (
+              <div
+                key={post.id}
+                className="rounded-lg border border-border bg-card p-4 space-y-3"
               >
-                View & comment
-              </Link>
-            </div>
-          ))
+                <div className="flex items-center gap-3">
+                  <Avatar src={authorAvatar} fallback={authorInitial} />
+                  <div>
+                    <Link href={`/users/${post.user_id}`} className="text-sm font-semibold text-foreground hover:underline">
+                      {authorName}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(post.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-foreground whitespace-pre-wrap">
+                  {post.content}
+                </p>
+
+                <div className="flex items-center gap-4 pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`gap-2 ${isLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground"}`}
+                    onClick={() => handleLike(post.id, !!isLiked)}
+                  >
+                    <span className="text-lg">{isLiked ? "❤️" : "🤍"}</span>
+                    {likeCount > 0 && <span>{likeCount}</span>}
+                  </Button>
+
+                  <Link href={`/posts/${post.id}`}>
+                    <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
+                      <Icons.MessageSquare className="h-4 w-4" />
+                      {commentCount > 0 && <span>{commentCount}</span>}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

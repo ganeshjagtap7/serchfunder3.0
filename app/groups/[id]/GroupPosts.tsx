@@ -89,7 +89,7 @@ export default function GroupPosts({
 
   if (!isMember) {
     return (
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-muted-foreground">
         Join this group to see and create posts.
       </p>
     );
@@ -97,11 +97,11 @@ export default function GroupPosts({
 
   return (
     <section className="space-y-4 mt-4">
-      <h2 className="text-lg font-semibold">Group posts</h2>
+      <h2 className="text-lg font-semibold text-foreground">Group posts</h2>
 
       <form onSubmit={handleCreatePost} className="space-y-2">
         <textarea
-          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+          className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           rows={3}
           placeholder="Share something with this group..."
           value={content}
@@ -111,29 +111,29 @@ export default function GroupPosts({
         <button
           type="submit"
           disabled={posting}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           {posting ? "Posting..." : "Post in group"}
         </button>
       </form>
 
-      <div className="space-y-3 border-t border-slate-800 pt-3">
+      <div className="space-y-3 border-t border-border pt-3">
         {loading ? (
-          <p className="text-sm text-slate-400">Loading posts...</p>
+          <p className="text-sm text-muted-foreground">Loading posts...</p>
         ) : posts.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted-foreground">
             No posts yet. Be the first!
           </p>
         ) : (
           posts.map((p) => (
             <div
               key={p.id}
-              className="rounded-md bg-slate-900 border border-slate-800 p-3"
+              className="rounded-md bg-card border border-border p-3"
             >
-              <p className="text-sm text-slate-100 whitespace-pre-wrap">
+              <p className="text-sm text-foreground whitespace-pre-wrap">
                 {p.content}
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {new Date(p.created_at).toLocaleString()}
               </p>
             </div>

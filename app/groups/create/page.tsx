@@ -60,15 +60,15 @@ export default function CreateGroupPage() {
     <>
       <Navbar />
       <main className="max-w-xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Create a group</h1>
+        <h1 className="text-2xl font-bold mb-4 text-foreground">Create a group</h1>
 
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-300 mb-1">
+            <label className="block text-sm font-bold text-foreground mb-1">
               Group name
             </label>
             <input
-              className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Example: Searchfunders in India"
@@ -76,11 +76,11 @@ export default function CreateGroupPage() {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-300 mb-1">
+            <label className="block text-sm font-bold text-foreground mb-1">
               Description
             </label>
             <textarea
-              className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -93,7 +93,7 @@ export default function CreateGroupPage() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
           >
             {saving ? "Creating..." : "Create group"}
           </button>

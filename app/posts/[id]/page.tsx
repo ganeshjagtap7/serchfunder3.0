@@ -8,7 +8,7 @@ import CommentsSection from "./CommentsSection";
 
 type Post = {
   id: string;
-  user_id: string; 
+  user_id: string;
   content: string;
   created_at: string;
 };
@@ -50,7 +50,7 @@ export default function PostPage() {
     <>
       <Navbar />
       <main className="max-w-2xl mx-auto p-6 space-y-4">
-        {loading && <p className="text-slate-300">Loading post...</p>}
+        {loading && <p className="text-muted-foreground">Loading post...</p>}
 
         {!loading && (error || !post) && (
           <p className="text-red-400">Post not found.</p>
@@ -58,11 +58,11 @@ export default function PostPage() {
 
         {!loading && post && (
           <>
-            <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 space-y-2">
-              <p className="text-sm text-slate-100 whitespace-pre-wrap">
+            <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+              <p className="text-sm text-foreground whitespace-pre-wrap">
                 {post.content}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {new Date(post.created_at).toLocaleString()}
               </p>
             </div>

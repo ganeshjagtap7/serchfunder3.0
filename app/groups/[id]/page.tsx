@@ -107,7 +107,7 @@ export default function GroupDetailPage() {
     <>
       <Navbar />
       <main className="max-w-2xl mx-auto p-6 space-y-6">
-        {loading && <p className="text-slate-300">Loading group...</p>}
+        {loading && <p className="text-muted-foreground">Loading group...</p>}
 
         {!loading && !group && (
           <p className="text-red-400">Group not found.</p>
@@ -117,9 +117,9 @@ export default function GroupDetailPage() {
           <>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold">{group.name}</h1>
+                <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
                 {group.description && (
-                  <p className="mt-1 text-slate-300">{group.description}</p>
+                  <p className="mt-1 text-muted-foreground">{group.description}</p>
                 )}
               </div>
 
@@ -127,19 +127,18 @@ export default function GroupDetailPage() {
                 <button
                   onClick={isMember ? handleLeave : handleJoin}
                   disabled={joining}
-                  className={`rounded-md px-4 py-2 text-sm font-medium text-white ${
-                    isMember
-                      ? "bg-slate-700 hover:bg-slate-600"
-                      : "bg-indigo-600 hover:bg-indigo-500"
-                  } disabled:opacity-60`}
+                  className={`rounded-md px-4 py-2 text-sm font-medium text-primary-foreground ${isMember
+                      ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                      : "bg-primary hover:bg-primary/90"
+                    } disabled:opacity-60`}
                 >
                   {joining
                     ? isMember
                       ? "Leaving..."
                       : "Joining..."
                     : isMember
-                    ? "Leave group"
-                    : "Join group"}
+                      ? "Leave group"
+                      : "Join group"}
                 </button>
               )}
             </div>

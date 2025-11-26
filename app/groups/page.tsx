@@ -38,16 +38,16 @@ export default function GroupsPage() {
           <h1 className="text-2xl font-bold">Groups</h1>
           <Link
             href="/groups/create"
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Create group
           </Link>
         </div>
 
         {loading ? (
-          <p className="text-slate-400 text-sm">Loading groups...</p>
+          <p className="text-muted-foreground text-sm">Loading groups...</p>
         ) : groups.length === 0 ? (
-          <p className="text-slate-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             No groups yet. Be the first to create one!
           </p>
         ) : (
@@ -56,13 +56,13 @@ export default function GroupsPage() {
               <Link
                 key={g.id}
                 href={`/groups/${g.id}`}
-                className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-indigo-500"
+                className="block rounded-lg border border-border bg-card p-4 hover:border-primary transition-colors"
               >
-                <h2 className="text-sm font-semibold text-slate-100">
+                <h2 className="text-sm font-semibold text-foreground">
                   {g.name}
                 </h2>
                 {g.description && (
-                  <p className="mt-1 text-xs text-slate-400 line-clamp-2">
+                  <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
                     {g.description}
                   </p>
                 )}
