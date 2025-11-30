@@ -87,7 +87,7 @@ export default function DashboardFeed() {
 
     const { data, error } = await supabase
       .from("posts")
-      .insert({ user_id: user.id, content })
+      .insert({ user_id: user.id, content } as any)
       .select("*")
       .single();
 
@@ -129,7 +129,7 @@ export default function DashboardFeed() {
     } else {
       await supabase
         .from("likes")
-        .insert({ post_id: postId, user_id: currentUserId });
+        .insert({ post_id: postId, user_id: currentUserId } as any);
     }
   };
 

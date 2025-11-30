@@ -78,7 +78,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
         post_id: postId,
         user_id: user.id,
         content,
-      })
+      } as any)
       .select("*")
       .single();
 

@@ -73,7 +73,7 @@ export default function GroupPosts({
         group_id: groupId,
         user_id: user.id,
         content,
-      })
+      } as any)
       .select("*")
       .single();
 

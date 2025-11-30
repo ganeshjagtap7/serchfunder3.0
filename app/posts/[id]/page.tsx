@@ -35,7 +35,7 @@ export default function PostPage() {
       if (error) {
         setError(error.message);
       } else {
-        setPost(data as Post);
+        setPost(data as Post | null);
       }
 
       setLoading(false);

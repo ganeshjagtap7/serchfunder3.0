@@ -42,7 +42,7 @@ export default function ProfilePage() {
         setError(error.message);
       } else {
         setProfile(
-          (data as Profile) || {
+          (data as Profile | null) || {
             id: user.id,
             full_name: user.email ?? "",
             bio: "",
@@ -67,7 +67,7 @@ export default function ProfilePage() {
       full_name: profile.full_name,
       bio: profile.bio,
       avatar_url: profile.avatar_url,
-    });
+    } as any);
 
     if (error) setError(error.message);
     setSaving(false);
@@ -106,7 +106,7 @@ export default function ProfilePage() {
       const { error: updateError } = await supabase.from("profiles").upsert({
         id: profile.id,
         avatar_url: publicUrl,
-      });
+      } as any);
 
       if (updateError) setError(updateError.message);
     } catch (err: any) {

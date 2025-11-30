@@ -63,7 +63,7 @@ export default function ChatPage() {
         sender_id: me,
         receiver_id: otherUserId,
         content,
-      })
+      } as any)
       .select("*")
       .single();
 
