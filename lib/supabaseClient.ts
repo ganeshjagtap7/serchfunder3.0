@@ -12,4 +12,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Create client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { Database } from "@/types/database";
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
+
+// Handle auth errors globally
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'TOKEN_REFRESHED') {
+      console.log('Token refreshed successfully');
+    }
+    if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
+      // Clear any stale data
+      console.log('Session expired or signed out');
+    }
+  });
+}
