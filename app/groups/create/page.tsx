@@ -36,7 +36,7 @@ export default function CreateGroupPage() {
         name,
         description,
         owner_id: user.id,
-      })
+      } as any)
       .select("id")
       .single();
 
@@ -48,12 +48,12 @@ export default function CreateGroupPage() {
 
     // add creator as member
     await supabase.from("group_members").insert({
-      group_id: data.id,
+      group_id: (data as any).id,
       user_id: user.id,
       role: "owner",
-    });
+    } as any);
 
-    router.push(`/groups/${data.id}`);
+    router.push(`/groups/${(data as any).id}`);
   };
 
   return (
