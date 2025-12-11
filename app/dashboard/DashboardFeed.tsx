@@ -137,7 +137,7 @@ export default function DashboardFeed() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <form onSubmit={handleCreatePost} className="space-y-3">
         <textarea
           className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"

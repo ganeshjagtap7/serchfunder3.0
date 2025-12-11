@@ -1,5 +1,6 @@
 import Navbar from "@/app/components/Navbar";
 import DashboardFeed from "./DashboardFeed";
+import FeaturedPosts from "./FeaturedPosts";
 import { Card, CardContent } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Icons } from "@/app/components/ui/Icons";
@@ -9,10 +10,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div className="max-w-[1400px] mx-auto px-2 sm:px-4 lg:px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           {/* Left Sidebar (Navigation) */}
-          <aside className="hidden md:block md:col-span-3 space-y-4">
+          <aside className="hidden lg:block lg:col-span-2 space-y-4">
             <Card>
               <CardContent className="p-2 space-y-1">
                 <Link href="/dashboard" className="block">
@@ -39,13 +40,12 @@ export default function DashboardPage() {
                     Resources
                   </Button>
                 </Link>
-
               </CardContent>
             </Card>
           </aside>
 
-          {/* Main Feed */}
-          <main className="col-span-12 md:col-span-9 space-y-6">
+          {/* Center Feed - Centered */}
+          <main className="col-span-12 lg:col-span-7 space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold tracking-tight">Community Feed</h1>
               <Button size="sm" className="gap-2">
@@ -53,8 +53,19 @@ export default function DashboardPage() {
                 New Post
               </Button>
             </div>
-            <DashboardFeed />
+            <div className="w-full">
+              <DashboardFeed />
+            </div>
           </main>
+
+          {/* Right Sidebar (Featured Posts) */}
+          <aside className="hidden lg:block lg:col-span-3 space-y-4">
+            <Card>
+              <CardContent className="p-4">
+                <FeaturedPosts />
+              </CardContent>
+            </Card>
+          </aside>
         </div>
       </div>
     </div>
