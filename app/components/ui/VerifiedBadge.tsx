@@ -8,6 +8,7 @@ export function VerifiedBadge({ className = "" }: VerifiedBadgeProps) {
   return (
     <span
       className={`inline-flex items-center justify-center h-4 w-4 rounded-full bg-blue-500 text-white flex-shrink-0 ${className}`}
+      style={{ backgroundColor: '#3b82f6' }} // Fallback for Tailwind
       title="Verified"
       aria-label="Verified user"
     >
@@ -16,6 +17,7 @@ export function VerifiedBadge({ className = "" }: VerifiedBadgeProps) {
         viewBox="0 0 24 24"
         fill="currentColor"
         className="h-3 w-3"
+        style={{ width: '12px', height: '12px' }} // Explicit size
       >
         <path
           fillRule="evenodd"
