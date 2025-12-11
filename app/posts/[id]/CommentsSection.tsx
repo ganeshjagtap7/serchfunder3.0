@@ -4,11 +4,13 @@ import { useEffect, useState, FormEvent } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { Avatar } from "@/app/components/ui/Avatar";
+import { VerifiedBadge } from "@/app/components/ui/VerifiedBadge";
 
 type Profile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  is_verified: boolean;
 };
 
 type Comment = {
@@ -36,7 +38,8 @@ export default function CommentsSection({ postId }: { postId: string }) {
         profiles (
           id,
           full_name,
-          avatar_url
+          avatar_url,
+          is_verified
         )
       `)
       .eq("post_id", postId)
@@ -136,6 +139,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
                   <Link href={`/users/${c.user_id}`} className="text-xs font-semibold text-foreground hover:underline">
                     {authorName}
                   </Link>
+                  {c.profiles?.is_verified && <VerifiedBadge className="h-3 w-3" />}
                   <span className="text-xs text-muted-foreground">
                     • {new Date(c.created_at).toLocaleString()}
                   </span>

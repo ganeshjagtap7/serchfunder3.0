@@ -9,6 +9,7 @@ type Profile = {
   full_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  is_verified?: boolean;
 };
 
 export default function ProfilePage() {

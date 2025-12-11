@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import { supabase } from "@/lib/supabaseClient";
+import { VerifiedBadge } from "@/app/components/ui/VerifiedBadge";
 
 type Profile = {
   id: string;
   full_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  is_verified: boolean;
 };
 
 export default function UserProfilePage() {
@@ -58,9 +60,12 @@ export default function UserProfilePage() {
                   .toUpperCase()}
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-white">
-                  {profile.full_name || "Unnamed user"}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-semibold text-white">
+                    {profile.full_name || "Unnamed user"}
+                  </h1>
+                  {profile.is_verified && <VerifiedBadge />}
+                </div>
                 <p className="text-xs text-slate-400 break-all">
                   ID: {profile.id}
                 </p>

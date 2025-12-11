@@ -6,11 +6,13 @@ import Link from "next/link";
 import { Avatar } from "@/app/components/ui/Avatar";
 import { Button } from "@/app/components/ui/Button";
 import { Icons } from "@/app/components/ui/Icons";
+import { VerifiedBadge } from "@/app/components/ui/VerifiedBadge";
 
 type Profile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  is_verified: boolean;
 };
 
 type Post = {
@@ -44,7 +46,8 @@ export default function DashboardFeed() {
         profiles (
           id,
           full_name,
-          avatar_url
+          avatar_url,
+          is_verified
         ),
         likes (
           user_id
@@ -175,9 +178,12 @@ export default function DashboardFeed() {
                 <div className="flex items-center gap-3">
                   <Avatar src={authorAvatar} fallback={authorInitial} />
                   <div>
-                    <Link href={`/users/${post.user_id}`} className="text-sm font-semibold text-foreground hover:underline">
-                      {authorName}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/users/${post.user_id}`} className="text-sm font-semibold text-foreground hover:underline">
+                        {authorName}
+                      </Link>
+                      {post.profiles?.is_verified && <VerifiedBadge />}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {new Date(post.created_at).toLocaleString()}
                     </p>
