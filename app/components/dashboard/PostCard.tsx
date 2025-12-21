@@ -62,24 +62,39 @@ export default function PostCard({ post, currentUserId, onLike }: PostCardProps)
           </p>
 
           <div className="flex gap-6 mt-3 text-slate-400">
+            {/* Like Button - Twitter/X style */}
             <button
               onClick={() => onLike(post.id, isLiked)}
-              className={`flex items-center gap-1 transition ${
+              className={`flex items-center gap-1 transition-all duration-200 cursor-pointer group ${
                 isLiked
                   ? "text-red-500"
                   : "text-slate-400 hover:text-red-500"
               }`}
+              aria-label={isLiked ? "Unlike post" : "Like post"}
+              aria-pressed={isLiked}
             >
-              <span className="material-symbols-outlined">favorite</span>
-              {post.likes.length}
+              <span
+                className={isLiked ? "material-symbols-filled" : "material-symbols-outlined"}
+                style={{ fontSize: "20px" }}
+              >
+                favorite
+              </span>
+              <span className="text-sm">{post.likes.length}</span>
             </button>
 
+            {/* Comment Button - Navigate to post detail */}
             <Link
               href={`/posts/${post.id}`}
-              className="flex items-center gap-1 text-slate-400 hover:text-blue-500 transition"
+              className="flex items-center gap-1 transition-all duration-200 cursor-pointer group text-slate-400 hover:text-blue-500"
+              aria-label="Comment on post"
             >
-              <span className="material-symbols-outlined">chat_bubble</span>
-              {post.comments?.[0]?.count ?? 0}
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: "20px" }}
+              >
+                chat_bubble
+              </span>
+              <span className="text-sm">{post.comments?.[0]?.count ?? 0}</span>
             </Link>
           </div>
         </div>

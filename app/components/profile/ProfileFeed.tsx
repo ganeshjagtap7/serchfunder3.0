@@ -43,39 +43,75 @@ export default function ProfileFeed({ userId, currentUserId, activeTab, refreshT
   const loadPosts = async () => {
     setLoading(true);
 
-    if (activeTab !== "posts") {
+    if (activeTab === "posts") {
+      // Load user's own posts
+      const { data, error } = await supabase
+        .from("posts")
+        .select(`
+          id,
+          user_id,
+          content,
+          created_at,
+          profiles (
+            id,
+            full_name,
+            avatar_url,
+            role,
+            bio,
+            is_verified
+          ),
+          likes ( user_id ),
+          comments ( count )
+        `)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading posts:", error);
+      }
+
+      setPosts((data as Post[]) || []);
+    } else if (activeTab === "likes") {
+      // Load posts the user has liked
+      const { data: likedPostsData, error } = await supabase
+        .from("likes")
+        .select(`
+          post_id,
+          posts (
+            id,
+            user_id,
+            content,
+            created_at,
+            profiles (
+              id,
+              full_name,
+              avatar_url,
+              role,
+              bio,
+              is_verified
+            ),
+            likes ( user_id ),
+            comments ( count )
+          )
+        `)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading liked posts:", error);
+      }
+
+      // Extract posts from the nested structure
+      const likedPosts = (likedPostsData || [])
+        .map((item: any) => item.posts)
+        .filter(Boolean) as Post[];
+
+      setPosts(likedPosts);
+    } else {
+      // Other tabs not yet implemented
       setPosts([]);
-      setLoading(false);
-      return;
     }
 
-    const { data } = await supabase
-      .from("posts")
-      .select(`
-        id,
-        user_id,
-        content,
-        created_at,
-        is_pinned,
-        profiles (
-          id,
-          full_name,
-          avatar_url,
-          role,
-          bio,
-          is_verified
-        ),
-        likes ( user_id ),
-        comments ( count )
-      `)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    const sortedPosts = (data as Post[]) || [];
-    const pinned = sortedPosts.filter(p => p.is_pinned);
-    const regular = sortedPosts.filter(p => !p.is_pinned);
-
-    setPosts([...pinned, ...regular]);
     setLoading(false);
   };
 
@@ -113,12 +149,12 @@ export default function ProfileFeed({ userId, currentUserId, activeTab, refreshT
   if (loading) {
     return (
       <div className="p-4">
-        <p className="text-sm text-slate-500">Loading posts…</p>
+        <p className="text-sm text-slate-500">Loading…</p>
       </div>
     );
   }
 
-  if (activeTab !== "posts") {
+  if (activeTab !== "posts" && activeTab !== "likes") {
     return (
       <div className="p-8 text-center">
         <p className="text-slate-500">This tab is not yet implemented.</p>
@@ -129,24 +165,20 @@ export default function ProfileFeed({ userId, currentUserId, activeTab, refreshT
   if (posts.length === 0) {
     return (
       <div className="p-8 text-center">
-        <p className="text-slate-500">No posts yet.</p>
+        <p className="text-slate-500">
+          {activeTab === "posts" ? "No posts yet." : "No liked posts yet."}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col">
-      {posts.map((post, index) => (
+      {posts.map((post) => (
         <div
           key={post.id}
           className="border-b border-slate-200 p-4 hover:bg-slate-50 cursor-pointer transition"
         >
-          {post.is_pinned && (
-            <div className="flex gap-2 text-xs text-slate-500 font-bold mb-1 ml-10">
-              <span className="material-symbols-outlined text-sm font-bold">push_pin</span>
-              Pinned Post
-            </div>
-          )}
           <PostCard
             post={post}
             currentUserId={currentUserId}
