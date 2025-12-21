@@ -13,6 +13,7 @@ type Profile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  banner_url: string | null;
   role: string;
   bio: string | null;
   is_verified: boolean;
@@ -54,7 +55,7 @@ export default function UserProfilePage() {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url, role, bio, is_verified, location, website, created_at")
+      .select("id, full_name, avatar_url, banner_url, role, bio, is_verified, location, website, created_at")
       .eq("id", userId)
       .single();
 

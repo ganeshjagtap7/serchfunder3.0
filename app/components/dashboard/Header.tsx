@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
 
 interface HeaderProps {
   avatarUrl?: string;
@@ -47,8 +48,14 @@ export default function Header({ avatarUrl }: HeaderProps) {
             <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
           </div>
         )}
-        <button className="bg-primary text-white rounded-full px-5 py-2 text-sm font-bold hover:bg-primary/90 transition-colors">
-          Post
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            window.location.href = "/login";
+          }}
+          className="bg-slate-100 text-slate-900 rounded-full px-5 py-2 text-sm font-bold hover:bg-slate-200 transition-colors"
+        >
+          Logout
         </button>
       </div>
     </header>
