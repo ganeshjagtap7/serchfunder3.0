@@ -2,37 +2,27 @@
 
 :root {
   /* Light mode defaults - Enhanced for visibility */
-  --background: #f8fafc;
-  /* Slate-50 instead of white */
+  --background: #f6f6f8;
   --foreground: #0f172a;
-  /* Slate-900 */
   --card: #ffffff;
   --card-foreground: #0f172a;
-  --primary: #2563eb;
-  /* Blue-600 */
+  --primary: #1152d4;
   --primary-foreground: #ffffff;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
   --border: #cbd5e1;
-  /* Slate-300 for visible borders */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0B0E14;
-    /* Deep Navy */
-    --foreground: #ededed;
-    --card: #151A23;
-    /* Slightly lighter navy for cards */
-    --card-foreground: #ededed;
-    --primary: #3B82F6;
-    /* Electric Blue */
-    --primary-foreground: #ffffff;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    --border: #2e3646;
-    /* Subtle border */
-  }
+.dark {
+  --background: #101622;
+  --foreground: #ffffff;
+  --card: #1e293b;
+  --card-foreground: #ffffff;
+  --primary: #1152d4;
+  --primary-foreground: #ffffff;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --border: #2e3646;
 }
 
 @theme inline {
@@ -54,4 +44,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Custom utility classes */
+.card-dark {
+  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800;
 }

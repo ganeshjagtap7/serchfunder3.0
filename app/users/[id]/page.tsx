@@ -1,92 +1,125 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Navbar from "@/app/components/Navbar";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { VerifiedBadge } from "@/app/components/ui/VerifiedBadge";
+import Header from "@/app/components/dashboard/Header";
+import ProfileHeader from "@/app/components/profile/ProfileHeader";
+import ProfileTabs from "@/app/components/profile/ProfileTabs";
+import ProfileFeed from "@/app/components/profile/ProfileFeed";
+import ProfileRightSidebar from "@/app/components/profile/ProfileRightSidebar";
 
 type Profile = {
   id: string;
   full_name: string | null;
-  bio: string | null;
   avatar_url: string | null;
+  role: string;
+  bio: string | null;
   is_verified: boolean;
+  location: string | null;
+  website: string | null;
+  created_at: string;
 };
 
 export default function UserProfilePage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams();
   const userId = params.id as string;
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-
-      setProfile(data as Profile | null);
-      setLoading(false);
-    };
-
-    if (userId) load();
+    loadProfile();
   }, [userId]);
 
-  const handleMessage = () => {
-    router.push(`/messages/${userId}`);
+  const loadProfile = async () => {
+    setLoading(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUserId(user?.id || null);
+
+    if (user) {
+      const { data: currentProfile } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      setCurrentUserAvatar((currentProfile as any)?.avatar_url || null);
+    }
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, role, bio, is_verified, location, website, created_at")
+      .eq("id", userId)
+      .single();
+
+    if (profileData) {
+      setProfile(profileData);
+    }
+
+    setLoading(false);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#f6f6f8' }}>
+        <Header avatarUrl={currentUserAvatar ?? undefined} />
+        <div className="flex items-center justify-center h-96">
+          <p className="text-sm text-slate-500">Loading profile…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#f6f6f8' }}>
+        <Header avatarUrl={currentUserAvatar ?? undefined} />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">User not found</h1>
+            <p className="text-slate-500">This profile does not exist.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <Navbar />
-      <main className="max-w-2xl mx-auto p-6">
-        {loading ? (
-          <p className="text-slate-400 text-sm">Loading user...</p>
-        ) : !profile ? (
-          <p className="text-red-400 text-sm">User not found.</p>
-        ) : (
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 text-lg font-semibold">
-                {(profile.full_name || "User")
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-semibold text-white">
-                    {profile.full_name || "Unnamed user"}
-                  </h1>
-                  {profile.is_verified && <VerifiedBadge />}
-                </div>
-                <p className="text-xs text-slate-400 break-all">
-                  ID: {profile.id}
-                </p>
-              </div>
+    <div className="min-h-screen" style={{ backgroundColor: '#f6f6f8' }}>
+      <Header avatarUrl={currentUserAvatar ?? undefined} />
+
+      <main className="flex h-full grow flex-col items-center">
+        <div className="w-full max-w-7xl px-0 sm:px-6 lg:px-8 py-0 sm:py-6">
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="flex flex-col w-full lg:w-[65%] bg-white border-x border-slate-200 min-h-screen sm:rounded-xl overflow-hidden shadow-sm">
+              <ProfileHeader
+                profile={profile}
+                isFollowing={isFollowing}
+                currentUserId={currentUserId}
+                onFollowChange={setIsFollowing}
+              />
+
+              <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+              <ProfileFeed
+                userId={userId}
+                currentUserId={currentUserId}
+                activeTab={activeTab}
+              />
             </div>
 
-            {profile.bio && (
-              <p className="text-sm text-slate-200 whitespace-pre-wrap">
-                {profile.bio}
-              </p>
-            )}
-
-            <button
-              onClick={handleMessage}
-              className="mt-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
-            >
-              Message
-            </button>
+            <div className="hidden lg:flex flex-col gap-6 w-[35%]">
+              <ProfileRightSidebar />
+            </div>
           </div>
-        )}
+        </div>
       </main>
-    </>
+    </div>
   );
 }

@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Searchfunder 2.0",
-  description: "Community platform MVP",
+  title: "Searchfunder - Social Feed",
+  description: "Community platform for searchers and investors",
 };
 
 export default function RootLayout({
@@ -19,7 +19,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body
         className={`${inter.className} min-h-screen bg-background text-foreground antialiased`}
       >

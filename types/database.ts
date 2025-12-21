@@ -261,6 +261,107 @@ export interface Database {
                     created_at?: string
                 }
             }
+            follows: {
+                Row: {
+                    id: string
+                    follower_id: string
+                    following_id: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    follower_id: string
+                    following_id: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    follower_id?: string
+                    following_id?: string
+                    created_at?: string
+                }
+            }
+            connections: {
+                Row: {
+                    id: string
+                    requester_id: string
+                    receiver_id: string
+                    status: 'pending' | 'accepted' | 'rejected'
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    requester_id: string
+                    receiver_id: string
+                    status?: 'pending' | 'accepted' | 'rejected'
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    requester_id?: string
+                    receiver_id?: string
+                    status?: 'pending' | 'accepted' | 'rejected'
+                    created_at?: string
+                }
+            }
+            topics: {
+                Row: {
+                    id: string
+                    name: string
+                    category: string
+                    post_count: number
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    name: string
+                    category: string
+                    post_count?: number
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    name?: string
+                    category?: string
+                    post_count?: number
+                    created_at?: string
+                }
+            }
+            notifications: {
+                Row: {
+                    id: string
+                    user_id: string
+                    actor_id: string
+                    type: 'like' | 'mention' | 'reply' | 'follow' | 'repost'
+                    entity_id: string | null
+                    entity_type: string | null
+                    is_read: boolean
+                    metadata: Json
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    actor_id: string
+                    type: 'like' | 'mention' | 'reply' | 'follow' | 'repost'
+                    entity_id?: string | null
+                    entity_type?: string | null
+                    is_read?: boolean
+                    metadata?: Json
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    actor_id?: string
+                    type?: 'like' | 'mention' | 'reply' | 'follow' | 'repost'
+                    entity_id?: string | null
+                    entity_type?: string | null
+                    is_read?: boolean
+                    metadata?: Json
+                    created_at?: string
+                }
+            }
         }
     }
 }

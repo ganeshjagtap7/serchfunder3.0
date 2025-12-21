@@ -2,16 +2,19 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
-import { Avatar } from "@/app/components/ui/Avatar";
-import { Button } from "@/app/components/ui/Button";
-import { Icons } from "@/app/components/ui/Icons";
-import { VerifiedBadge } from "@/app/components/ui/VerifiedBadge";
+import { Database } from "@/types/database";
+import Header from "@/app/components/dashboard/Header";
+import LeftSidebar from "@/app/components/dashboard/LeftSidebar";
+import CreatePostCard from "@/app/components/dashboard/CreatePostCard";
+import PostCard from "@/app/components/dashboard/PostCard";
+import RightSidebar from "@/app/components/dashboard/RightSidebar";
 
 type Profile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  role: string;
+  bio: string | null;
   is_verified: boolean;
 };
 
@@ -30,8 +33,10 @@ export default function DashboardFeed() {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [me, setMe] = useState<Profile | null>(null);
+
+  /* ---------------- LOAD DATA ---------------- */
 
   const loadPosts = async () => {
     setLoading(true);
@@ -39,31 +44,37 @@ export default function DashboardFeed() {
     const { data: { user } } = await supabase.auth.getUser();
     setCurrentUserId(user?.id || null);
 
-    const { data, error } = await supabase
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, role, bio, is_verified")
+        .eq("id", user.id)
+        .single();
+
+      setMe(profile);
+    }
+
+    const { data } = await supabase
       .from("posts")
       .select(`
-        *,
+        id,
+        user_id,
+        content,
+        created_at,
         profiles (
           id,
           full_name,
           avatar_url,
+          role,
+          bio,
           is_verified
         ),
-        likes (
-          user_id
-        ),
-        comments (
-          count
-        )
+        likes ( user_id ),
+        comments ( count )
       `)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setPosts((data as any) || []);
-    }
-
+    setPosts((data as Post[]) || []);
     setLoading(false);
   };
 
@@ -71,56 +82,42 @@ export default function DashboardFeed() {
     loadPosts();
   }, []);
 
+  /* ---------------- CREATE POST ---------------- */
+
   const handleCreatePost = async (e: FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() || !currentUserId) return;
+
     setPosting(true);
-    setError(null);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const postData: Database['public']['Tables']['posts']['Insert'] = {
+      user_id: currentUserId,
+      content,
+    };
+    await supabase.from("posts").insert(postData as any);
 
-    if (userError || !user) {
-      setError("You must be logged in to post.");
-      setPosting(false);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("posts")
-      .insert({ user_id: user.id, content } as any)
-      .select("*")
-      .single();
-
-    if (error) {
-      setError(error.message);
-    } else if (data) {
-      // Refresh posts to get the full object with profile
-      loadPosts();
-      setContent("");
-    }
-
+    setContent("");
     setPosting(false);
+    loadPosts();
   };
+
+  /* ---------------- LIKE ---------------- */
 
   const handleLike = async (postId: string, isLiked: boolean) => {
     if (!currentUserId) return;
 
-    // Optimistic update
+    // Optimistic UI
     setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            likes: isLiked
-              ? p.likes.filter((l) => l.user_id !== currentUserId)
-              : [...p.likes, { user_id: currentUserId }],
-          };
-        }
-        return p;
-      })
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              likes: isLiked
+                ? p.likes.filter((l) => l.user_id !== currentUserId)
+                : [...p.likes, { user_id: currentUserId }],
+            }
+          : p
+      )
     );
 
     if (isLiked) {
@@ -130,93 +127,60 @@ export default function DashboardFeed() {
         .eq("post_id", postId)
         .eq("user_id", currentUserId);
     } else {
-      await supabase
-        .from("likes")
-        .insert({ post_id: postId, user_id: currentUserId } as any);
+      const likeData: Database['public']['Tables']['likes']['Insert'] = {
+        post_id: postId,
+        user_id: currentUserId,
+      };
+      await supabase.from("likes").insert(likeData as any);
     }
   };
 
+  /* ---------------- UI ---------------- */
+
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleCreatePost} className="space-y-3">
-        <textarea
-          className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-          rows={3}
-          placeholder="Share something with the community..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        <button
-          type="submit"
-          disabled={posting}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-        >
-          {posting ? "Posting..." : "Post"}
-        </button>
-      </form>
+    <>
+      <Header avatarUrl={me?.avatar_url ?? undefined} />
 
-      <div className="border-t border-border pt-4 space-y-4">
-        {loading ? (
-          <p className="text-muted-foreground text-sm">Loading posts...</p>
-        ) : posts.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No posts yet. Be the first!</p>
-        ) : (
-          posts.map((post) => {
-            const isLiked = post.likes?.some((l) => l.user_id === currentUserId);
-            const likeCount = post.likes?.length || 0;
-            const commentCount = post.comments?.[0]?.count || 0;
-            const authorName = post.profiles?.full_name || `User ${post.user_id.slice(0, 6)}`;
-            const authorAvatar = post.profiles?.avatar_url;
-            const authorInitial = authorName.charAt(0).toUpperCase();
+      <main className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 px-4 py-6">
+        {/* LEFT SIDEBAR */}
+        <aside className="hidden md:block md:col-span-3">
+          <LeftSidebar profile={me} />
+        </aside>
 
-            return (
-              <div
-                key={post.id}
-                className="rounded-lg border border-border bg-card p-4 space-y-3"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar src={authorAvatar} fallback={authorInitial} />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Link href={`/users/${post.user_id}`} className="text-sm font-semibold text-foreground hover:underline">
-                        {authorName}
-                      </Link>
-                      {post.profiles?.is_verified && <VerifiedBadge />}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(post.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+        {/* CENTER FEED */}
+        <section className="md:col-span-9 lg:col-span-6 space-y-5">
+          {me && (
+            <CreatePostCard
+              avatarUrl={me.avatar_url}
+              value={content}
+              onChange={setContent}
+              onSubmit={handleCreatePost}
+              loading={posting}
+            />
+          )}
 
-                <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {post.content}
-                </p>
+          {loading ? (
+            <p className="text-sm text-slate-500">Loading posts…</p>
+          ) : posts.length === 0 ? (
+            <p className="text-sm text-slate-500">No posts yet.</p>
+          ) : (
+            posts.map((post) => (
+              <article key={post.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <PostCard
+                  post={post}
+                  currentUserId={currentUserId}
+                  onLike={handleLike}
+                />
+              </article>
+            ))
+          )}
+        </section>
 
-                <div className="flex items-center gap-4 pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`gap-2 ${isLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground"}`}
-                    onClick={() => handleLike(post.id, !!isLiked)}
-                  >
-                    <span className="text-lg">{isLiked ? "❤️" : "🤍"}</span>
-                    {likeCount > 0 && <span>{likeCount}</span>}
-                  </Button>
-
-                  <Link href={`/posts/${post.id}`}>
-                    <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
-                      <Icons.MessageSquare className="h-4 w-4" />
-                      {commentCount > 0 && <span>{commentCount}</span>}
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-    </div>
+        {/* RIGHT SIDEBAR */}
+        <aside className="hidden lg:block lg:col-span-3">
+          <RightSidebar />
+        </aside>
+      </main>
+    </>
   );
 }

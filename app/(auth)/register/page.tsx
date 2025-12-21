@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+
+
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,20 +18,33 @@ export default function RegisterPage() {
     setSuccess(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth/callback`,
+  },
+});
 
-    setLoading(false);
 
-    if (error) {
-      setError(error.message);
-      return;
-    }
+if (error) {
+  setError(error.message);
+  setLoading(false);
+  return;
+}
+// Fire-and-forget welcome email
+fetch("/api/send-welcome-email", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email,
+    firstName: email.split("@")[0],
+  }),
+});
 
-    // Depending on Supabase settings, user may need to confirm email.
-    setSuccess("Account created! Check your email to confirm your account.");
+
+setSuccess("Account created! Check your email to confirm your account.");
+setLoading(false);
   };
 
   return (

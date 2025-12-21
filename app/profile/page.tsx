@@ -1,214 +1,117 @@
 "use client";
 
-import { useEffect, useState, ChangeEvent } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import Navbar from "@/app/components/Navbar";
+import Header from "@/app/components/dashboard/Header";
+import ProfileHeader from "@/app/components/profile/ProfileHeader";
+import ProfileTabs from "@/app/components/profile/ProfileTabs";
+import ProfileFeed from "@/app/components/profile/ProfileFeed";
+import ProfileRightSidebar from "@/app/components/profile/ProfileRightSidebar";
 
 type Profile = {
   id: string;
   full_name: string | null;
-  bio: string | null;
   avatar_url: string | null;
-  is_verified?: boolean;
+  role: string;
+  bio: string | null;
+  is_verified: boolean;
+  location: string | null;
+  website: string | null;
+  created_at: string;
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("posts");
 
   useEffect(() => {
-    const loadProfile = async () => {
-      setLoading(true);
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        setError("Not logged in");
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setProfile(
-          (data as Profile | null) || {
-            id: user.id,
-            full_name: user.email ?? "",
-            bio: "",
-            avatar_url: null,
-          }
-        );
-      }
-
-      setLoading(false);
-    };
-
     loadProfile();
   }, []);
 
-  const handleSave = async () => {
-    if (!profile) return;
-    setSaving(true);
-    setError(null);
+  const loadProfile = async () => {
+    setLoading(true);
 
-    const { error } = await supabase.from("profiles").upsert({
-      id: profile.id,
-      full_name: profile.full_name,
-      bio: profile.bio,
-      avatar_url: profile.avatar_url,
-    } as any);
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (error) setError(error.message);
-    setSaving(false);
-  };
-
-  const handleAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    try {
-      if (!profile) return;
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      setUploading(true);
-      setError(null);
-
-      // unique path: userId/timestamp
-      const filePath = `${profile.id}/${Date.now()}-${file.name}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file);
-
-      if (uploadError) {
-        setError(uploadError.message);
-        setUploading(false);
-        return;
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
-      // update local state
-      setProfile({ ...profile, avatar_url: publicUrl });
-
-      // persist to DB
-      const { error: updateError } = await supabase.from("profiles").upsert({
-        id: profile.id,
-        avatar_url: publicUrl,
-      } as any);
-
-      if (updateError) setError(updateError.message);
-    } catch (err: any) {
-      setError(err.message ?? "Error uploading avatar");
-    } finally {
-      setUploading(false);
+    if (!user) {
+      router.push("/login");
+      return;
     }
+
+    setCurrentUserId(user.id);
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, role, bio, is_verified, location, website, created_at")
+      .eq("id", user.id)
+      .single();
+
+    if (profileData) {
+      setProfile(profileData);
+    }
+
+    setLoading(false);
   };
 
   if (loading) {
     return (
-      <>
-        <Navbar />
-        <main className="p-6 text-muted-foreground">Loading profile...</main>
-      </>
+      <div className="min-h-screen" style={{ backgroundColor: '#f6f6f8' }}>
+        <Header />
+        <div className="flex items-center justify-center h-96">
+          <p className="text-sm text-slate-500">Loading profile…</p>
+        </div>
+      </div>
     );
   }
 
   if (!profile) {
     return (
-      <>
-        <Navbar />
-        <main className="p-6 text-red-400">
-          {error || "Could not load profile"}
-        </main>
-      </>
+      <div className="min-h-screen" style={{ backgroundColor: '#f6f6f8' }}>
+        <Header />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Profile not found</h1>
+            <p className="text-slate-500">Please complete your profile setup.</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
-      <main className="max-w-xl mx-auto p-6 space-y-6">
-        <h1 className="text-2xl font-bold">Your profile</h1>
+    <div className="min-h-screen" style={{ backgroundColor: '#f6f6f8' }}>
+      <Header avatarUrl={profile.avatar_url ?? undefined} />
 
-        {/* Avatar section */}
-        <div className="flex items-center gap-4">
-          {profile.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt="Avatar"
-              className="h-16 w-16 rounded-full object-cover border border-slate-700"
-            />
-          ) : (
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-xl font-semibold text-muted-foreground">
-              {(profile.full_name || "U").charAt(0).toUpperCase()}
+      <main className="flex h-full grow flex-col items-center">
+        <div className="w-full max-w-7xl px-0 sm:px-6 lg:px-8 py-0 sm:py-6">
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="flex flex-col w-full lg:w-[65%] bg-white border-x border-slate-200 min-h-screen sm:rounded-xl overflow-hidden shadow-sm">
+              <ProfileHeader
+                profile={profile}
+                isFollowing={false}
+                currentUserId={currentUserId}
+                onFollowChange={() => {}}
+              />
+
+              <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+              <ProfileFeed
+                userId={profile.id}
+                currentUserId={currentUserId}
+                activeTab={activeTab}
+              />
             </div>
-          )}
-          <div className="space-y-2">
-            <label className="block text-sm font-bold text-foreground">
-              Profile picture
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="text-sm text-muted-foreground"
-            />
-            {uploading && (
-              <p className="text-xs text-slate-400">Uploading...</p>
-            )}
+
+            <div className="hidden lg:flex flex-col gap-6 w-[35%]">
+              <ProfileRightSidebar />
+            </div>
           </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-foreground mb-1">
-              Full name
-            </label>
-            <input
-              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-              value={profile.full_name ?? ""}
-              onChange={(e) =>
-                setProfile({ ...profile, full_name: e.target.value })
-              }
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-foreground mb-1">Bio</label>
-            <textarea
-              className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-              rows={4}
-              value={profile.bio ?? ""}
-              onChange={(e) =>
-                setProfile({ ...profile, bio: e.target.value })
-              }
-            />
-          </div>
-
-          {error && <p className="text-sm text-red-400">{error}</p>}
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "Save profile"}
-          </button>
         </div>
       </main>
-    </>
+    </div>
   );
 }
