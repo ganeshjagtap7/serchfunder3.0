@@ -63,6 +63,18 @@ export default function DynamicHeader({ avatarUrl }: DynamicHeaderProps) {
         </Link>
 
         <Link
+          href="/messages"
+          className={`flex flex-col items-center gap-0.5 transition-colors ${
+            isActive("/messages")
+              ? "text-primary"
+              : "text-slate-500 hover:text-slate-900"
+          }`}
+        >
+          <span className="material-symbols-outlined text-2xl" style={isActive("/messages") ? { fontVariationSettings: "'FILL' 1" } : {}}>mail</span>
+          <span className={`text-xs ${isActive("/messages") ? "font-semibold" : ""}`}>Messages</span>
+        </Link>
+
+        <Link
           href="/profile"
           className={`flex flex-col items-center gap-0.5 transition-colors ${
             isActive("/profile")

@@ -362,6 +362,35 @@ export interface Database {
                     created_at?: string
                 }
             }
+            messages: {
+                Row: {
+                    id: string
+                    sender_id: string
+                    receiver_id: string
+                    content: string
+                    message_type: 'text' | 'post' | 'image'
+                    seen_at: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    sender_id: string
+                    receiver_id: string
+                    content: string
+                    message_type?: 'text' | 'post' | 'image'
+                    seen_at?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    sender_id?: string
+                    receiver_id?: string
+                    content?: string
+                    message_type?: 'text' | 'post' | 'image'
+                    seen_at?: string | null
+                    created_at?: string
+                }
+            }
         }
     }
 }

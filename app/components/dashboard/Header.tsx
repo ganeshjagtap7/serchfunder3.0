@@ -27,13 +27,13 @@ export default function Header({ avatarUrl }: HeaderProps) {
           <span className="material-symbols-outlined text-2xl">search</span>
           <span className="text-xs">Explore</span>
         </Link>
-        <Link href="/connect" className="flex flex-col items-center text-slate-500 gap-0.5 hover:text-slate-900 transition-colors">
-          <span className="material-symbols-outlined text-2xl">group</span>
-          <span className="text-xs">Connect</span>
-        </Link>
         <Link href="/notifications" className="flex flex-col items-center text-slate-500 gap-0.5 hover:text-slate-900 transition-colors">
           <span className="material-symbols-outlined text-2xl">notifications</span>
           <span className="text-xs">Notifications</span>
+        </Link>
+        <Link href="/messages" className="flex flex-col items-center text-slate-500 gap-0.5 hover:text-slate-900 transition-colors">
+          <span className="material-symbols-outlined text-2xl">mail</span>
+          <span className="text-xs">Messages</span>
         </Link>
         <Link href="/profile" className="flex flex-col items-center text-slate-500 gap-0.5 hover:text-slate-900 transition-colors">
           <span className="material-symbols-outlined text-2xl">person</span>
