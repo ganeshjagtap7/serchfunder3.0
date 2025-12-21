@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("posts");
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Partial<Profile>>({});
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     loadProfile();
@@ -199,6 +200,7 @@ export default function ProfilePage() {
                 userId={profile.id}
                 currentUserId={currentUserId}
                 activeTab={activeTab}
+                refreshTrigger={refreshTrigger}
               />
             </div>
 

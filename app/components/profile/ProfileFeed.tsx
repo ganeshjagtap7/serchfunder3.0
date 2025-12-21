@@ -29,15 +29,16 @@ interface ProfileFeedProps {
   userId: string;
   currentUserId: string | null;
   activeTab: string;
+  refreshTrigger?: number; // Optional prop to trigger refresh
 }
 
-export default function ProfileFeed({ userId, currentUserId, activeTab }: ProfileFeedProps) {
+export default function ProfileFeed({ userId, currentUserId, activeTab, refreshTrigger }: ProfileFeedProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadPosts();
-  }, [userId, activeTab]);
+  }, [userId, activeTab, refreshTrigger]);
 
   const loadPosts = async () => {
     setLoading(true);

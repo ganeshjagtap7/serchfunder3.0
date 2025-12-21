@@ -86,16 +86,35 @@ export default function DashboardFeed() {
 
   const handleCreatePost = async (e: FormEvent) => {
     e.preventDefault();
-    if (!content.trim() || !currentUserId) return;
+
+    // Guard: Block if not logged in
+    if (!currentUserId) {
+      console.error("Cannot create post: User not logged in");
+      alert("You must be logged in to create a post");
+      return;
+    }
+
+    if (!content.trim()) {
+      return;
+    }
 
     setPosting(true);
 
     const postData: Database['public']['Tables']['posts']['Insert'] = {
       user_id: currentUserId,
-      content,
+      content: content.trim(),
     };
-    await supabase.from("posts").insert(postData as any);
 
+    const { error } = await supabase.from("posts").insert(postData as any);
+
+    if (error) {
+      console.error("Failed to create post:", error);
+      alert(`Failed to create post: ${error.message}`);
+      setPosting(false);
+      return;
+    }
+
+    console.log("Post created successfully");
     setContent("");
     setPosting(false);
     loadPosts();
