@@ -29,8 +29,24 @@ export default function ProfileHeader({ profile, isFollowing, currentUserId, onF
   const handleFollow = async () => {
     if (!currentUserId || isOwnProfile) return;
 
-    // TODO: Implement follow logic with Supabase
-    onFollowChange(!isFollowing);
+    if (isFollowing) {
+      // Unfollow
+      await supabase
+        .from("follows")
+        .delete()
+        .eq("follower_id", currentUserId)
+        .eq("following_id", profile.id);
+
+      onFollowChange(false);
+    } else {
+      // Follow
+      await supabase.from("follows").insert({
+        follower_id: currentUserId,
+        following_id: profile.id,
+      } as never);
+
+      onFollowChange(true);
+    }
   };
 
   const formatJoinDate = (dateString: string) => {
