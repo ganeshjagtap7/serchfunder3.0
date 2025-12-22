@@ -1,58 +1,98 @@
-// app/groups/[id]/page.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import DynamicHeader from "@/app/components/dashboard/DynamicHeader";
+import ConversationList from "@/app/components/messages/ConversationList";
+import ConversationHeader from "@/app/components/messages/ConversationHeader";
+import GroupMessageThread from "@/app/components/groups/GroupMessageThread";
+import GroupMessageComposer from "@/app/components/groups/GroupMessageComposer";
 import Link from "next/link";
-import { createServerSupabaseClient } from "@/lib/supabaseServer";
-import { Database } from "@/types/database";
-import GroupMembershipButton from "./GroupMembershipButton";
 
-type Group = Database['public']['Tables']['groups']['Row'];
+interface GroupMessage {
+  id: string;
+  sender_id: string;
+  group_id: string;
+  content: string;
+  created_at: string;
+  sender: {
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
 
-type GroupPageProps = {
-  params: Promise<{
-    id: string;
-  }>;
-};
+export default function GroupPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const groupId = params.id as string;
 
-export default async function GroupPage({ params }: GroupPageProps) {
-  const { id: groupId } = await params;
-  const supabase = await createServerSupabaseClient();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
+  const [group, setGroup] = useState<{
+    name: string;
+    description: string | null;
+    owner_id: string;
+  } | null>(null);
+  const [isMember, setIsMember] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [conversationListKey, setConversationListKey] = useState(0);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  useEffect(() => {
+    checkAuthAndLoadGroup();
+  }, []);
 
-  const { data: group, error: groupError } = await supabase
-    .from("groups")
-    .select("*")
-    .eq("id", groupId)
-    .maybeSingle() as { data: Group | null; error: any };
+  useEffect(() => {
+    if (currentUserId && groupId && isMember) {
+      loadMessages();
+      subscribeToMessages();
+    }
+  }, [currentUserId, groupId, isMember]);
 
-  if (groupError || !group) {
-    return (
-      <div className="max-w-3xl mx-auto py-10">
-        <p className="text-red-500">Group not found.</p>
-        <Link href="/groups" className="text-blue-600 underline mt-4 inline-block">
-          Back to groups
-        </Link>
-      </div>
-    );
-  }
+  const checkAuthAndLoadGroup = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
 
-  // Get member count
-  const { data: members } = await supabase
-    .from("group_members")
-    .select("id")
-    .eq("group_id", groupId);
+    if (!user) {
+      // Redirect or show login state? User complained about redirect.
+      // But for chat, we probably need auth.
+      // I will just let the "Not logged in" UI handle it if I decide not to redirect.
+      // But to be consistent with Chat Page request:
+      // router.push("/login"); 
+      // return;
+      setLoading(false); // Let the UI show a login prompt instead of redirecting
+      return;
+    }
 
-  const memberCount = members?.length ?? 0;
+    setCurrentUserId(user.id);
 
-  let isMember = false;
-  let isOwner = false;
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", user.id)
+      .single();
 
-  if (user) {
-    // Check if user is the owner
-    isOwner = group.owner_id === user.id;
+    if (profileData) {
+      setCurrentUserAvatar((profileData as any).avatar_url);
+    }
 
-    // Check if user is a member
+    // Load Group
+    const { data: groupData, error } = await supabase
+      .from("groups")
+      .select("*")
+      .eq("id", groupId)
+      .single();
+
+    if (error || !groupData) {
+      // Group not found
+      setLoading(false);
+      return;
+    }
+
+    setGroup(groupData);
+
+    // Check Membership
     const { data: membership } = await supabase
       .from("group_members")
       .select("id")
@@ -60,52 +100,167 @@ export default async function GroupPage({ params }: GroupPageProps) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    isMember = !!membership;
+    setIsMember(!!membership || (groupData as any).owner_id === user.id);
+    setLoading(false);
+  };
+
+  const loadMessages = async () => {
+    const { data, error } = await supabase
+      .from("group_messages")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("created_at", { ascending: true });
+
+    if (!error && data) {
+      // Fetch sender profiles separately
+      const senderIds = [...new Set(data.map((msg: any) => msg.sender_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", senderIds);
+
+      const profileMap = new Map(
+        (profiles || []).map((p: any) => [p.id, { full_name: p.full_name, avatar_url: p.avatar_url }])
+      );
+
+      const messagesWithSenders = data.map((msg: any) => ({
+        ...msg,
+        sender: profileMap.get(msg.sender_id) || { full_name: "Unknown", avatar_url: null }
+      }));
+
+      setMessages(messagesWithSenders as any);
+    }
+  };
+
+  const subscribeToMessages = () => {
+    const channel = supabase
+      .channel(`group-chat-${groupId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "group_messages",
+          filter: `group_id=eq.${groupId}`,
+        },
+        async (payload) => {
+          // Fetch the sender info for the new message
+          const { data: senderData } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", payload.new.sender_id)
+            .single();
+
+          const newMessage = {
+            ...payload.new,
+            sender: senderData
+          };
+          setMessages((prev) => [...prev, newMessage as any]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    }
+  }
+
+  const handleMessageSent = () => {
+    loadMessages();
+    setConversationListKey(prev => prev + 1);
+  };
+
+  const handleJoinGroup = async () => {
+    if (!currentUserId) return;
+
+    const { error } = await supabase
+      .from("group_members")
+      .insert({
+        group_id: groupId,
+        user_id: currentUserId
+      } as any);
+
+    if (!error) {
+      setIsMember(true);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen bg-white overflow-hidden">
+        <DynamicHeader avatarUrl={currentUserAvatar ?? undefined} />
+        <div className="flex items-center justify-center h-96">
+          <p className="text-sm text-slate-500">Loading group...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUserId) {
+    return (
+      <div className="flex flex-col h-screen bg-white overflow-hidden">
+        <DynamicHeader avatarUrl={undefined} />
+        <div className="flex flex-col items-center justify-center flex-1 p-6">
+          <h2 className="text-xl font-semibold mb-2">Login Required</h2>
+          <p className="text-slate-600 mb-4">You need to log in to view this group.</p>
+          <Link href="/login" className="px-4 py-2 bg-primary text-white rounded-md">Log in</Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!group) {
+    return (
+      <div className="flex flex-col h-screen bg-white overflow-hidden">
+        <DynamicHeader avatarUrl={currentUserAvatar ?? undefined} />
+        <div className="flex items-center justify-center flex-1">
+          <p className="text-red-500">Group not found.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-10">
-      <h1 className="text-3xl font-semibold mb-2">{group.name}</h1>
-      <p className="text-slate-600 mb-4">{group.description}</p>
-      <p className="text-sm text-slate-500 mb-6">
-        {memberCount} member{memberCount === 1 ? "" : "s"}
-      </p>
+    <div className="flex flex-col h-screen bg-white overflow-hidden">
+      <DynamicHeader avatarUrl={currentUserAvatar ?? undefined} />
 
-      {/* Only show join/leave button if user is logged in and not the owner */}
-      {user && !isOwner && (
-        <GroupMembershipButton
-          groupId={groupId}
-          isMemberInitially={isMember}
-        />
-      )}
+      <main className="flex flex-1 w-full overflow-hidden bg-white">
+        <ConversationList key={conversationListKey} currentUserId={currentUserId} />
 
-      {/* Show owner badge */}
-      {isOwner && (
-        <div className="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm text-blue-800 font-medium">You own this group</p>
-        </div>
-      )}
+        <section className="flex flex-1 flex-col h-full bg-white relative min-w-0">
+          <ConversationHeader
+            name={group.name}
+            username={`${isMember ? 'Member' : 'Not Joined'} • ${group.description || 'No description'}`}
+            avatarUrl={null} // Group avatar currently not supported in schema
+          />
 
-      {/* Show login message if not authenticated */}
-      {!user && (
-        <div className="mb-4 px-4 py-2 bg-slate-50 border border-slate-200 rounded-md">
-          <p className="text-sm text-slate-600">
-            <a href="/login" className="text-blue-600 hover:underline">Log in</a> to join this group
-          </p>
-        </div>
-      )}
+          {isMember ? (
+            <>
+              <GroupMessageThread
+                messages={messages}
+                currentUserId={currentUserId}
+              />
 
-      <div className="mt-8 border-t border-slate-200 pt-6">
-        {isMember ? (
-          <p className="text-slate-700">
-            You&apos;re a member of this group. (Next we&apos;ll show group posts here.)
-          </p>
-        ) : (
-          <p className="text-slate-500">
-            Join this group to see posts and participate in discussions.
-          </p>
-        )}
-      </div>
+              <GroupMessageComposer
+                currentUserId={currentUserId}
+                groupId={groupId}
+                onMessageSent={handleMessageSent}
+              />
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center flex-1 p-6 text-center">
+              <h3 className="text-lg font-semibold mb-2">Join {group.name}</h3>
+              <p className="text-slate-600 max-w-md mb-6">{group.description}</p>
+              <button
+                onClick={handleJoinGroup}
+                className="px-6 py-2 bg-primary text-white rounded-full font-medium hover:bg-primary/90 transition-colors"
+              >
+                Join Group
+              </button>
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }

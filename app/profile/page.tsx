@@ -19,6 +19,9 @@ type Profile = {
   is_verified: boolean;
   location: string | null;
   website: string | null;
+  linkedin_url: string | null;
+  education: string | null;
+  work: string | null;
   created_at: string;
 };
 
@@ -50,7 +53,7 @@ export default function ProfilePage() {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url, banner_url, role, bio, is_verified, location, website, created_at")
+      .select("id, full_name, avatar_url, banner_url, role, bio, is_verified, location, website, linkedin_url, education, work, created_at")
       .eq("id", user.id)
       .single();
 
@@ -184,7 +187,7 @@ export default function ProfilePage() {
                 profile={profile}
                 isFollowing={false}
                 currentUserId={currentUserId}
-                onFollowChange={() => {}}
+                onFollowChange={() => { }}
                 isEditing={isEditing}
                 editedProfile={editedProfile}
                 onEditToggle={handleEditToggle}
