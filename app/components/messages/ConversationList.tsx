@@ -34,7 +34,13 @@ export default function ConversationList({ currentUserId }: ConversationListProp
   const loadConversations = async () => {
     setLoading(true);
 
-    const { data: messages } = await supabase
+    if (!currentUserId) {
+      setConversations([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data: messages, error } = await supabase
       .from("messages")
       .select(`
         id,
@@ -46,6 +52,10 @@ export default function ConversationList({ currentUserId }: ConversationListProp
       `)
       .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
       .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading conversations:", error);
+    }
 
     if (!messages || messages.length === 0) {
       setConversations([]);

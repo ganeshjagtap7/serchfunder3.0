@@ -33,6 +33,7 @@ export default function ChatPage() {
     avatar: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [conversationListKey, setConversationListKey] = useState(0);
 
   useEffect(() => {
     checkAuth();
@@ -110,6 +111,7 @@ export default function ChatPage() {
 
   const handleMessageSent = () => {
     loadConversation();
+    setConversationListKey(prev => prev + 1); // Force ConversationList to refresh
   };
 
   if (loading || !currentUserId || !otherUserProfile) {
@@ -128,7 +130,7 @@ export default function ChatPage() {
       <DynamicHeader avatarUrl={currentUserAvatar ?? undefined} />
 
       <main className="flex flex-1 w-full overflow-hidden bg-white">
-        <ConversationList currentUserId={currentUserId} />
+        <ConversationList key={conversationListKey} currentUserId={currentUserId} />
 
         <section className="flex flex-1 flex-col h-full bg-white relative min-w-0">
           <ConversationHeader

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Avatar } from "@/app/components/ui/Avatar";
 import { VerifiedBadge } from "@/app/components/ui/VerifiedBadge";
 import { supabase } from "@/lib/supabaseClient";
@@ -15,6 +16,9 @@ interface Profile {
   is_verified: boolean;
   location: string | null;
   website: string | null;
+  linkedin_url: string | null;
+  education: string | null;
+  work: string | null;
   created_at: string;
 }
 
@@ -45,6 +49,7 @@ export default function ProfileHeader({
   onAvatarUpload,
   onBannerUpload
 }: ProfileHeaderProps) {
+  const router = useRouter();
   const isOwnProfile = currentUserId === profile.id;
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -72,6 +77,11 @@ export default function ProfileHeader({
 
       onFollowChange(true);
     }
+  };
+
+  const handleMessage = () => {
+    if (!currentUserId || isOwnProfile) return;
+    router.push(`/messages/${profile.id}`);
   };
 
   const handleAvatarClick = () => {
@@ -187,7 +197,10 @@ export default function ProfileHeader({
               <button className="size-9 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-100 transition">
                 <span className="material-symbols-outlined text-xl">more_horiz</span>
               </button>
-              <button className="size-9 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-100 transition">
+              <button
+                onClick={handleMessage}
+                className="size-9 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-100 transition"
+              >
                 <span className="material-symbols-outlined text-xl">mail</span>
               </button>
               <button
@@ -261,7 +274,51 @@ export default function ProfileHeader({
           )
         )}
 
-        {/* Location and Website */}
+        {/* Education and Work - Edit Mode */}
+        {isEditing && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-slate-500 text-lg">school</span>
+              <input
+                type="text"
+                value={editedProfile.education ?? profile.education ?? ""}
+                onChange={(e) => onEditChange?.({ ...editedProfile, education: e.target.value })}
+                className="flex-1 px-3 py-1.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Education (e.g., MBA, Harvard Business School)"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-slate-500 text-lg">work</span>
+              <input
+                type="text"
+                value={editedProfile.work ?? profile.work ?? ""}
+                onChange={(e) => onEditChange?.({ ...editedProfile, work: e.target.value })}
+                className="flex-1 px-3 py-1.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Work (e.g., CEO at TechStart Inc)"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Education and Work - Display Mode */}
+        {!isEditing && (profile.education || profile.work) && (
+          <div className="mt-3 space-y-2">
+            {profile.work && (
+              <div className="flex items-center gap-2 text-slate-900 text-sm">
+                <span className="material-symbols-outlined text-slate-500 text-lg">work</span>
+                <span>{profile.work}</span>
+              </div>
+            )}
+            {profile.education && (
+              <div className="flex items-center gap-2 text-slate-900 text-sm">
+                <span className="material-symbols-outlined text-slate-500 text-lg">school</span>
+                <span>{profile.education}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Location, LinkedIn, and Website */}
         {isEditing ? (
           <div className="mt-3 space-y-2">
             <div className="flex items-center gap-2">
@@ -275,13 +332,25 @@ export default function ProfileHeader({
               />
             </div>
             <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-slate-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+              <input
+                type="url"
+                value={editedProfile.linkedin_url ?? profile.linkedin_url ?? ""}
+                onChange={(e) => onEditChange?.({ ...editedProfile, linkedin_url: e.target.value })}
+                className="flex-1 px-3 py-1.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="LinkedIn profile URL"
+              />
+            </div>
+            <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-slate-500 text-lg">link</span>
               <input
                 type="url"
                 value={editedProfile.website ?? profile.website ?? ""}
                 onChange={(e) => onEditChange?.({ ...editedProfile, website: e.target.value })}
                 className="flex-1 px-3 py-1.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Website"
+                placeholder="Website or company URL"
               />
             </div>
           </div>
@@ -293,13 +362,29 @@ export default function ProfileHeader({
                 <span>{profile.location}</span>
               </div>
             )}
+            {profile.linkedin_url && (
+              <a
+                href={profile.linkedin_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center hover:text-blue-600 transition cursor-pointer"
+                aria-label="LinkedIn Profile"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+              </a>
+            )}
             {profile.website && (
-              <div className="flex items-center gap-1 hover:text-primary transition cursor-pointer">
+              <a
+                href={profile.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center hover:text-primary transition cursor-pointer"
+                aria-label="Website"
+              >
                 <span className="material-symbols-outlined text-lg">link</span>
-                <a className="hover:underline" href={profile.website} target="_blank" rel="noopener noreferrer">
-                  {profile.website.replace(/^https?:\/\//, '')}
-                </a>
-              </div>
+              </a>
             )}
             <div className="flex items-center gap-1">
               <span className="material-symbols-outlined text-lg">calendar_month</span>

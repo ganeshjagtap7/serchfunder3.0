@@ -19,14 +19,17 @@ export default function MessageComposer({ currentUserId, receiverId, onMessageSe
 
     setSending(true);
 
-    const { error } = await supabase.from("messages").insert({
+    const { data, error } = await supabase.from("messages").insert({
       sender_id: currentUserId,
       receiver_id: receiverId,
       content: message.trim(),
       message_type: "text",
     } as never);
 
-    if (!error) {
+    if (error) {
+      console.error("Error sending message:", error);
+      alert(`Failed to send message: ${error.message || "Please try again."}`);
+    } else {
       setMessage("");
       onMessageSent();
       if (textareaRef.current) {
