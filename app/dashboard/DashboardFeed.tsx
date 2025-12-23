@@ -154,6 +154,52 @@ export default function DashboardFeed() {
     }
   };
 
+  /* ---------------- DELETE POST ---------------- */
+
+  const handleDelete = (postId: string) => {
+    // Optimistic UI update - remove post from list
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  };
+
+  /* ---------------- EDIT POST ---------------- */
+
+  const handleEdit = (postId: string) => {
+    const post = posts.find((p) => p.id === postId);
+    if (post) {
+      const newContent = prompt("Edit your post:", post.content);
+      if (newContent !== null && newContent.trim()) {
+        updatePost(postId, newContent.trim());
+      }
+    }
+  };
+
+  const updatePost = async (postId: string, newContent: string) => {
+    // Use raw SQL to bypass TypeScript issues
+    const { error } = await (supabase as any)
+      .from("posts")
+      .update({ content: newContent })
+      .eq("id", postId);
+
+    if (error) {
+      console.error("Error updating post:", error);
+      alert("Failed to update post. Please try again.");
+    } else {
+      // Optimistic UI update
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, content: newContent } : p
+        )
+      );
+    }
+  };
+
+  /* ---------------- SAVE POST ---------------- */
+
+  const handleSave = (postId: string) => {
+    console.log("Post saved:", postId);
+    // Saved posts will be handled by PostCard component
+  };
+
   /* ---------------- UI ---------------- */
 
   return (
@@ -189,6 +235,9 @@ export default function DashboardFeed() {
                   post={post}
                   currentUserId={currentUserId}
                   onLike={handleLike}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onSave={handleSave}
                 />
               </article>
             ))

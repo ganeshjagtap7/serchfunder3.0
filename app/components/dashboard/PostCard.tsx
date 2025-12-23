@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Avatar } from "@/app/components/ui/Avatar";
 import { VerifiedBadge } from "@/app/components/ui/VerifiedBadge";
+import { supabase } from "@/lib/supabaseClient";
 
 interface PostProfile {
   id: string;
@@ -25,11 +27,79 @@ interface PostCardProps {
   post: Post;
   currentUserId: string | null;
   onLike: (postId: string, isLiked: boolean) => void;
+  onDelete?: (postId: string) => void;
+  onEdit?: (postId: string) => void;
+  onSave?: (postId: string) => void;
 }
 
-export default function PostCard({ post, currentUserId, onLike }: PostCardProps) {
+export default function PostCard({ post, currentUserId, onLike, onDelete, onEdit, onSave }: PostCardProps) {
   const author = post.profiles;
   const isLiked = post.likes.some((l) => l.user_id === currentUserId);
+  const isOwnPost = currentUserId === post.user_id;
+
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMenu]);
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+
+    const { error } = await supabase
+      .from("posts")
+      .delete()
+      .eq("id", post.id);
+
+    if (error) {
+      console.error("Error deleting post:", error);
+      alert("Failed to delete post. Please try again.");
+    } else {
+      setShowMenu(false);
+      if (onDelete) onDelete(post.id);
+    }
+  };
+
+  const handleSave = async () => {
+    const { error } = await supabase
+      .from("saved_posts")
+      .insert({
+        user_id: currentUserId,
+        post_id: post.id,
+      } as never);
+
+    if (error) {
+      if (error.code === "23505") {
+        alert("Post already saved!");
+      } else {
+        console.error("Error saving post:", error);
+        alert("Failed to save post. Please try again.");
+      }
+    } else {
+      alert("Post saved successfully!");
+      setShowMenu(false);
+      if (onSave) onSave(post.id);
+    }
+  };
+
+  const handleEdit = () => {
+    setShowMenu(false);
+    if (onEdit) onEdit(post.id);
+  };
 
   return (
     <div className="flex gap-3">
@@ -52,9 +122,51 @@ export default function PostCard({ post, currentUserId, onLike }: PostCardProps)
                 · {new Date(post.created_at).toLocaleTimeString()}
               </span>
             </div>
-            <span className="material-symbols-outlined text-slate-400">
-              more_horiz
-            </span>
+
+            {/* Three-dot menu */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1 rounded-full hover:bg-slate-100 transition-colors"
+                aria-label="Post options"
+              >
+                <span className="material-symbols-outlined text-slate-400">
+                  more_horiz
+                </span>
+              </button>
+
+              {/* Dropdown menu */}
+              {showMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
+                  {isOwnPost && (
+                    <>
+                      <button
+                        onClick={handleEdit}
+                        className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                        Edit post
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                        Delete post
+                      </button>
+                      <div className="border-t border-slate-200 my-1"></div>
+                    </>
+                  )}
+                  <button
+                    onClick={handleSave}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-lg">bookmark</span>
+                    Save post
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <p className="mt-1 whitespace-pre-wrap text-slate-900">
