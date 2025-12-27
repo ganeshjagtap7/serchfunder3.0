@@ -17,6 +17,8 @@ interface Post {
   id: string;
   user_id: string;
   content: string;
+  image_url?: string | null;
+  gif_url?: string | null;
   created_at: string;
   profiles: PostProfile | null;
   likes: { user_id: string }[];
@@ -172,6 +174,28 @@ export default function PostCard({ post, currentUserId, onLike, onDelete, onEdit
           <p className="mt-1 whitespace-pre-wrap text-slate-900">
             {post.content}
           </p>
+
+          {/* Image Display */}
+          {post.image_url && (
+            <div className="mt-3 rounded-lg overflow-hidden border border-slate-200">
+              <img
+                src={post.image_url}
+                alt="Post image"
+                className="w-full max-h-[500px] object-cover"
+              />
+            </div>
+          )}
+
+          {/* GIF Display */}
+          {post.gif_url && (
+            <div className="mt-3 rounded-lg overflow-hidden border border-slate-200">
+              <img
+                src={post.gif_url}
+                alt="Post GIF"
+                className="w-full max-h-[500px] object-cover"
+              />
+            </div>
+          )}
 
           <div className="flex gap-6 mt-3 text-slate-400">
             {/* Like Button - Twitter/X style */}

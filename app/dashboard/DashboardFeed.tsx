@@ -22,6 +22,8 @@ type Post = {
   id: string;
   user_id: string;
   content: string;
+  image_url?: string | null;
+  gif_url?: string | null;
   created_at: string;
   profiles: Profile | null;
   likes: { user_id: string }[];
@@ -60,6 +62,8 @@ export default function DashboardFeed() {
         id,
         user_id,
         content,
+        gif_url,
+        image_url,
         created_at,
         profiles (
           id,
@@ -84,7 +88,7 @@ export default function DashboardFeed() {
 
   /* ---------------- CREATE POST ---------------- */
 
-  const handleCreatePost = async (e: FormEvent) => {
+  const handleCreatePost = async (e: FormEvent, gifUrl?: string | null) => {
     e.preventDefault();
 
     // Guard: Block if not logged in
@@ -94,7 +98,8 @@ export default function DashboardFeed() {
       return;
     }
 
-    if (!content.trim()) {
+    // Require either content or a GIF
+    if (!content.trim() && !gifUrl) {
       return;
     }
 
@@ -102,7 +107,8 @@ export default function DashboardFeed() {
 
     const postData: Database['public']['Tables']['posts']['Insert'] = {
       user_id: currentUserId,
-      content: content.trim(),
+      content: content.trim() || "", // Allow empty content if there's a GIF
+      ...(gifUrl && { gif_url: gifUrl }),
     };
 
     const { error } = await supabase.from("posts").insert(postData as any);
