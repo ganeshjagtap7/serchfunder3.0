@@ -232,6 +232,7 @@ export default function GroupPage() {
             name={group.name}
             username={`${isMember ? 'Member' : 'Not Joined'} • ${group.description || 'No description'}`}
             avatarUrl={null} // Group avatar currently not supported in schema
+            groupId={groupId}
           />
 
           {isMember ? (
