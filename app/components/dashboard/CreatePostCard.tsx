@@ -2,6 +2,7 @@
 
 import { FormEvent, useState, useRef, useEffect } from "react";
 import { Avatar } from "@/app/components/ui/Avatar";
+import MentionAutocomplete from "@/app/components/ui/MentionAutocomplete";
 
 interface CreatePostCardProps {
   avatarUrl?: string | null;
@@ -89,6 +90,7 @@ export default function CreatePostCard({
 
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const gifPickerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -114,6 +116,36 @@ export default function CreatePostCard({
   const handleEmojiClick = (emoji: string) => {
     onChange(value + emoji);
     setShowEmojiPicker(false);
+  };
+
+  // Handle mention selection
+  const handleMentionSelect = (username: string) => {
+    if (!textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const textAfterCursor = value.substring(cursorPos);
+
+    // Find the last @ symbol before cursor
+    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
+    if (lastAtIndex === -1) return;
+
+    // Replace from @ to cursor with @username
+    const newText =
+      textBeforeCursor.substring(0, lastAtIndex) +
+      `@${username} ` +
+      textAfterCursor;
+
+    onChange(newText);
+
+    // Set cursor position after the inserted username
+    setTimeout(() => {
+      const newCursorPos = lastAtIndex + username.length + 2; // +2 for @ and space
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      textarea.focus();
+    }, 0);
   };
 
   // Handle GIF search using Giphy API
@@ -179,13 +211,21 @@ export default function CreatePostCard({
           fallback="?"
         />
 
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <textarea
+            ref={textareaRef}
             rows={2}
             placeholder="What's happening in your search?"
             className="w-full bg-transparent resize-none border-none focus:ring-0 text-base placeholder-slate-400 text-slate-900"
             value={value}
             onChange={(e) => onChange(e.target.value)}
+          />
+
+          {/* Mention Autocomplete */}
+          <MentionAutocomplete
+            textareaRef={textareaRef}
+            value={value}
+            onSelect={handleMentionSelect}
           />
 
           {/* GIF Preview */}
