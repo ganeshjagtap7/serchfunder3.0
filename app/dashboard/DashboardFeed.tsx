@@ -8,6 +8,7 @@ import LeftSidebar from "@/app/components/dashboard/LeftSidebar";
 import CreatePostCard from "@/app/components/dashboard/CreatePostCard";
 import PostCard from "@/app/components/dashboard/PostCard";
 import RightSidebar from "@/app/components/dashboard/RightSidebar";
+import { extractMentions } from "@/lib/mentions";
 
 type Profile = {
   id: string;
@@ -37,6 +38,44 @@ export default function DashboardFeed() {
   const [posting, setPosting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [me, setMe] = useState<Profile | null>(null);
+
+  /* ---------------- MENTION NOTIFICATIONS ---------------- */
+
+  const handlePostMentions = async (postId: string, content: string, authorId: string) => {
+    try {
+      const mentions = extractMentions(content);
+      if (mentions.length === 0) return;
+
+      // Resolve usernames to user IDs
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .in("username", mentions);
+
+      type ProfileRow = { id: string; username: string | null };
+      const typedProfiles = (profiles || []) as ProfileRow[];
+
+      if (typedProfiles.length === 0) return;
+
+      // Create mention notifications (excluding self-mentions)
+      const notifications = typedProfiles
+        .filter((profile) => profile.id !== authorId)
+        .map((profile) => ({
+          user_id: profile.id,
+          actor_id: authorId,
+          type: "mention" as const,
+          entity_type: "post",
+          entity_id: postId,
+          is_read: false,
+        }));
+
+      if (notifications.length > 0) {
+        await supabase.from("notifications").insert(notifications as any);
+      }
+    } catch (error) {
+      console.error("Error creating mention notifications:", error);
+    }
+  };
 
   /* ---------------- LOAD DATA ---------------- */
 
@@ -111,13 +150,65 @@ export default function DashboardFeed() {
       ...(gifUrl && { gif_url: gifUrl }),
     };
 
-    const { error } = await supabase.from("posts").insert(postData as any);
+    const { data: newPost, error } = await supabase
+      .from("posts")
+      .insert(postData as any)
+      .select("id")
+      .single();
+
+    type NewPostRow = { id: string };
+    const typedPost = newPost as NewPostRow | null;
 
     if (error) {
       console.error("Failed to create post:", error);
       alert(`Failed to create post: ${error.message}`);
       setPosting(false);
       return;
+    }
+
+    // Handle mentions (non-blocking)
+    if (typedPost?.id && content) {
+      handlePostMentions(typedPost.id, content, currentUserId).catch((err: any) => {
+        console.error("Failed to create mention notifications:", err);
+      });
+    }
+
+    // Notify followers about new post (non-blocking)
+    if (typedPost?.id) {
+      (async () => {
+        try {
+          // Fetch all followers
+          const { data: followers } = await supabase
+            .from("follows")
+            .select("follower_id")
+            .eq("following_id", currentUserId);
+
+          if (followers && followers.length > 0) {
+            type FollowerRow = { follower_id: string };
+            const typedFollowers = followers as FollowerRow[];
+
+            // Create notifications for all followers
+            const notifications = typedFollowers.map((follower) => ({
+              user_id: follower.follower_id,
+              actor_id: currentUserId,
+              type: "new_post" as const,
+              entity_type: "post",
+              entity_id: typedPost.id,
+              is_read: false,
+            }));
+
+            const { error: notifError } = await supabase
+              .from("notifications")
+              .insert(notifications as any);
+
+            if (notifError) {
+              console.error("Failed to create follower notifications:", notifError);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to notify followers:", err);
+        }
+      })();
     }
 
     console.log("Post created successfully");
@@ -130,6 +221,10 @@ export default function DashboardFeed() {
 
   const handleLike = async (postId: string, isLiked: boolean) => {
     if (!currentUserId) return;
+
+    // Find the post author
+    const post = posts.find((p) => p.id === postId);
+    const postAuthorId = post?.user_id;
 
     // Optimistic UI
     setPosts((prev) =>
@@ -157,6 +252,28 @@ export default function DashboardFeed() {
         user_id: currentUserId,
       };
       await supabase.from("likes").insert(likeData as any);
+
+      // Create like notification (non-blocking, exclude self-likes)
+      if (postAuthorId && postAuthorId !== currentUserId) {
+        (async () => {
+          try {
+            const { error } = await supabase.from("notifications").insert({
+              user_id: postAuthorId,
+              actor_id: currentUserId,
+              type: "like",
+              entity_type: "post",
+              entity_id: postId,
+              is_read: false,
+            } as any);
+
+            if (error) {
+              console.error("Failed to create like notification:", error);
+            }
+          } catch (err) {
+            console.error("Failed to create like notification:", err);
+          }
+        })();
+      }
     }
   };
 

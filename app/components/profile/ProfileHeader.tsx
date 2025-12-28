@@ -76,6 +76,28 @@ export default function ProfileHeader({
       } as never);
 
       onFollowChange(true);
+
+      // Create follow notification (non-blocking, exclude self-follows)
+      if (profile.id !== currentUserId) {
+        (async () => {
+          try {
+            const { error } = await supabase.from("notifications").insert({
+              user_id: profile.id,
+              actor_id: currentUserId,
+              type: "follow",
+              entity_type: "profile",
+              entity_id: currentUserId,
+              is_read: false,
+            } as any);
+
+            if (error) {
+              console.error("Failed to create follow notification:", error);
+            }
+          } catch (err) {
+            console.error("Failed to create follow notification:", err);
+          }
+        })();
+      }
     }
   };
 

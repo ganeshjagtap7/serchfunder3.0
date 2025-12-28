@@ -48,6 +48,7 @@ export default function SavedPostCard({
 
     setIsLiking(true);
     const wasLiked = savedPost.is_liked;
+    const postAuthorId = post.user_id;
 
     // Optimistically update UI
     onLike(post.id, wasLiked);
@@ -66,6 +67,28 @@ export default function SavedPostCard({
           post_id: post.id,
           user_id: currentUserId,
         } as never);
+
+        // Create like notification (non-blocking, exclude self-likes)
+        if (postAuthorId && postAuthorId !== currentUserId) {
+          (async () => {
+            try {
+              const { error } = await supabase.from("notifications").insert({
+                user_id: postAuthorId,
+                actor_id: currentUserId,
+                type: "like",
+                entity_type: "post",
+                entity_id: post.id,
+                is_read: false,
+              } as any);
+
+              if (error) {
+                console.error("Failed to create like notification:", error);
+              }
+            } catch (err) {
+              console.error("Failed to create like notification:", err);
+            }
+          })();
+        }
       }
     } catch (error) {
       console.error("Error toggling like:", error);

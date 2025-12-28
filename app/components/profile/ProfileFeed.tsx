@@ -118,6 +118,10 @@ export default function ProfileFeed({ userId, currentUserId, activeTab, refreshT
   const handleLike = async (postId: string, isLiked: boolean) => {
     if (!currentUserId) return;
 
+    // Find the post author
+    const post = posts.find((p) => p.id === postId);
+    const postAuthorId = post?.user_id;
+
     setPosts((prev) =>
       prev.map((p) =>
         p.id === postId
@@ -143,6 +147,28 @@ export default function ProfileFeed({ userId, currentUserId, activeTab, refreshT
         user_id: currentUserId,
       };
       await supabase.from("likes").insert(likeData as any);
+
+      // Create like notification (non-blocking, exclude self-likes)
+      if (postAuthorId && postAuthorId !== currentUserId) {
+        (async () => {
+          try {
+            const { error } = await supabase.from("notifications").insert({
+              user_id: postAuthorId,
+              actor_id: currentUserId,
+              type: "like",
+              entity_type: "post",
+              entity_id: postId,
+              is_read: false,
+            } as any);
+
+            if (error) {
+              console.error("Failed to create like notification:", error);
+            }
+          } catch (err) {
+            console.error("Failed to create like notification:", err);
+          }
+        })();
+      }
     }
   };
 

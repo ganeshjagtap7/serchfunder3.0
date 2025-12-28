@@ -11,7 +11,7 @@ interface NotificationsListProps {
   filter: string;
 }
 
-type NotificationType = "like" | "mention" | "reply" | "follow" | "repost";
+type NotificationType = "like" | "mention" | "reply" | "follow" | "repost" | "new_post";
 
 interface Notification {
   id: string;
@@ -26,6 +26,7 @@ interface Notification {
   actor?: {
     id: string;
     full_name: string | null;
+    username: string | null;
     avatar_url: string | null;
     is_verified: boolean;
   };
@@ -49,15 +50,12 @@ export default function NotificationsList({ currentUserId, filter }: Notificatio
   const loadNotifications = async () => {
     if (!currentUserId) return;
 
+    console.log("Notifications querying for user:", currentUserId);
     setLoading(true);
 
     let query = supabase
       .from("notifications")
-      .select(`
-        *,
-        actor:actor_id(id, full_name, avatar_url, is_verified),
-        post:entity_id(id, content)
-      `)
+      .select("*")
       .eq("user_id", currentUserId)
       .order("created_at", { ascending: false });
 
@@ -65,12 +63,56 @@ export default function NotificationsList({ currentUserId, filter }: Notificatio
       query = query.eq("type", filter);
     }
 
-    const { data, error } = await query;
+    const { data: notificationsData, error } = await query;
 
-    if (!error && data) {
-      setNotifications(data as any);
+    console.log("Notifications query result:", { data: notificationsData, error, count: notificationsData?.length });
+
+    if (error) {
+      console.error("Error loading notifications:", error);
+      setLoading(false);
+      return;
     }
 
+    if (!notificationsData || notificationsData.length === 0) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch actor profiles separately
+    const actorIds = [...new Set(notificationsData.map((n: any) => n.actor_id).filter(Boolean))];
+    const { data: actorProfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, username, avatar_url, is_verified")
+      .in("id", actorIds);
+
+    // Fetch posts separately
+    const postIds = [...new Set(
+      notificationsData
+        .filter((n: any) => n.entity_type === "post" && n.entity_id)
+        .map((n: any) => n.entity_id)
+    )];
+
+    const { data: posts } = postIds.length > 0
+      ? await supabase
+          .from("posts")
+          .select("id, content")
+          .in("id", postIds)
+      : { data: [] };
+
+    // Combine data
+    const enrichedNotifications = notificationsData.map((notif: any) => {
+      const actor = actorProfiles?.find((p: any) => p.id === notif.actor_id);
+      const post = posts?.find((p: any) => p.id === notif.entity_id);
+
+      return {
+        ...notif,
+        actor: actor || null,
+        post: post || null,
+      };
+    });
+
+    setNotifications(enrichedNotifications);
     setLoading(false);
   };
 
@@ -119,6 +161,8 @@ export default function NotificationsList({ currentUserId, filter }: Notificatio
         return `replied to your post`;
       case "follow":
         return `started following you`;
+      case "new_post":
+        return `shared a new post`;
       case "repost":
         return `reposted your post`;
       default:
@@ -136,6 +180,8 @@ export default function NotificationsList({ currentUserId, filter }: Notificatio
         return { icon: "chat_bubble", color: "text-green-500", bg: "bg-green-50" };
       case "follow":
         return { icon: "person_add", color: "text-purple-500", bg: "bg-purple-50" };
+      case "new_post":
+        return { icon: "article", color: "text-teal-500", bg: "bg-teal-50" };
       case "repost":
         return { icon: "repeat", color: "text-orange-500", bg: "bg-orange-50" };
       default:
@@ -241,6 +287,11 @@ export default function NotificationsList({ currentUserId, filter }: Notificatio
                       <span className="font-semibold text-slate-900 hover:underline">
                         {notification.actor?.full_name || "Someone"}
                       </span>
+                      {notification.actor?.username && (
+                        <span className="text-slate-500 text-sm">
+                          @{notification.actor.username}
+                        </span>
+                      )}
                       {notification.actor?.is_verified && <VerifiedBadge />}
                       <span className="text-slate-600 text-sm">
                         {getNotificationText(notification)}

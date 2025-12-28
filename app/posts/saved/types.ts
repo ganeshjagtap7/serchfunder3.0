@@ -13,7 +13,7 @@ export interface SavedPost {
     profiles: {
       id: string;
       full_name: string | null;
-      username?: string | null;
+      username: string | null;
       avatar_url: string | null;
       is_verified: boolean | null;
     } | null;

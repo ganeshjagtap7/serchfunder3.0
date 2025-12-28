@@ -1,8 +1,8 @@
 # 🚀 SearchFunder 3.0 - Development Progress Tracker
 
-**Last Updated:** December 27, 2024
+**Last Updated:** December 28, 2024
 **Project Status:** ✅ Phase 1 Complete | Phase 2 In Progress
-**Current Version:** v1.1.7
+**Current Version:** v1.1.8
 **Repository:** https://github.com/ganeshjagtap7/serchfunder3.0
 
 ---
@@ -508,11 +508,12 @@ _No known issues at this time_
 - ✅ **v1.1.4** - Message Icon & Messaging Functionality Fixes
 - ✅ **v1.1.5** - Post Management Actions: Delete, Edit, Save
 - ✅ **v1.1.6** - Rich Media Post Creation: Emojis & GIFs
-- ✅ **v1.1.7** - Saved Posts Page with Full Functionality (Current)
+- ✅ **v1.1.7** - Saved Posts Page with Full Functionality
+- ✅ **v1.1.8** - Username System & @username Profile URLs (Current)
 
 ### Upcoming
-- **v1.1.8** - Image Upload Feature with Supabase Storage
-- **v1.1.9** - Poll Creation and Voting System
+- **v1.1.9** - Image Upload Feature with Supabase Storage
+- **v1.2.0** - Poll Creation and Voting System
 - **v1.2.0** - Real-time messaging with Supabase Realtime
 - **v1.5.0** - Deals marketplace
 - **v2.0.0** - Groups and communities
@@ -549,6 +550,72 @@ _No known issues at this time_
 ---
 
 ## 📝 Notes
+
+### December 28, 2024 (Username System & Profile URLs - v1.1.8)
+- **Automatic Username Assignment** 🏷️
+- Implemented automatic unique @username assignment on user signup
+- Username generated from email address (before @ symbol)
+- Collision handling: Appends incrementing numbers (user1, user2, etc.)
+- PL/pgSQL database trigger for automatic username generation
+- Cleaned up invalid characters and limited to 15 characters base
+- Migration added `username` column to profiles table with unique constraint
+- Backfilled existing users with unique usernames
+- **Profile URLs with @username** 🔗
+- Created new dynamic route: `app/[username]/page.tsx`
+- Middleware rewrite for clean URLs: `/@username` → `/username`
+- Supports profile access like `/@ganesh`, `/@investor1`, etc.
+- Protected known routes from username conflicts (dashboard, posts, etc.)
+- Reuses existing profile UI components (ProfileHeader, ProfileTabs, ProfileFeed)
+- Fetches profile by username instead of user ID
+- Proper 404 handling with `notFound()` for non-existent usernames
+- **Notification System Integration** 🔔
+- Added username display in notifications (@username shown with full name)
+- Updated notification queries to include username in actor profile data
+- Created complete notification system with 5 types:
+  - Like notifications (with self-like filtering)
+  - Mention notifications (@username parsing in posts and comments)
+  - Reply notifications (comment on posts)
+  - Follow notifications (new follower alerts)
+  - New post notifications (followers notified when user posts)
+- Mention extraction using regex: `/@([a-z0-9_]{3,20})/gi`
+- **Notification Query Fix** 🔧
+- Fixed 400 Bad Request errors in notifications page
+- Refactored complex Supabase join syntax to separate queries
+- Query strategy:
+  1. Fetch notifications with simple SELECT *
+  2. Extract unique actor IDs and post IDs
+  3. Fetch profiles separately using .in() bulk query
+  4. Fetch posts separately using .in() bulk query
+  5. Combine data client-side for display
+- This approach avoids foreign key join syntax issues
+- More reliable and easier to debug
+- Better error handling for missing relations
+- **Middleware Implementation** 🛣️
+- Added URL rewrite logic in `middleware.ts`
+- Pattern: `/@username` rewrites to `/username` internally
+- Protected routes list prevents username conflicts
+- Works alongside existing Supabase auth refresh
+- Compatible with Next.js App Router
+- **Database Schema Updates** 🗄️
+- Created migration: `add_username_column.sql`
+- Added PL/pgSQL function: `generate_unique_username(email)`
+- Updated profile creation trigger to call username generator
+- Migration: `backfill_existing_usernames.sql` for existing users
+- Result: 13 profiles with unique usernames assigned
+- **Technical Implementation** 🔧
+- New route: `app/[username]/page.tsx` (125 lines)
+- Updated: `middleware.ts` with rewrite logic (+29 lines)
+- Updated: Multiple notification creation points across the app
+- Updated: `NotificationsList.tsx` with separated query logic
+- All mention handling uses `lib/mentions.ts` helper
+- Non-blocking notification creation (IIFE pattern)
+- Self-notification filtering in all notification types
+- **Build Status** ✅
+- Build passing with zero TypeScript errors
+- All routes working: `/@username`, `/users/[id]`, `/profile`
+- Notifications loading successfully with actor profiles and posts
+- Username system fully functional with collision handling
+- Profile URLs accessible and shareable
 
 ### December 27, 2024 (Saved Posts Page - v1.1.7)
 - **Complete Saved Posts Feature** 🔖

@@ -134,6 +134,28 @@ export default function PeopleList({ currentUserId, activeTab, filters }: People
       } as never);
 
       setPeople((prev) => prev.map((p) => (p.id === userId ? { ...p, is_following: true } : p)));
+
+      // Create follow notification (non-blocking, exclude self-follows)
+      if (userId !== currentUserId) {
+        (async () => {
+          try {
+            const { error } = await supabase.from("notifications").insert({
+              user_id: userId,
+              actor_id: currentUserId,
+              type: "follow",
+              entity_type: "profile",
+              entity_id: currentUserId,
+              is_read: false,
+            } as any);
+
+            if (error) {
+              console.error("Failed to create follow notification:", error);
+            }
+          } catch (err) {
+            console.error("Failed to create follow notification:", err);
+          }
+        })();
+      }
     }
   };
 

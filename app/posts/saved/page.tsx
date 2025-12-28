@@ -69,9 +69,13 @@ export default function SavedPostsPage() {
       return;
     }
 
+    // Type assertion for savedPostsData
+    type SavedPostRow = { id: string; post_id: string; user_id: string; created_at: string };
+    const typedSavedPosts = savedPostsData as SavedPostRow[];
+
     // Manually fetch each post with its profile
     const enrichedPosts = await Promise.all(
-      savedPostsData.map(async (savedPost) => {
+      typedSavedPosts.map(async (savedPost) => {
         // Fetch the post first
         const { data: post } = await supabase
           .from("posts")
@@ -79,28 +83,48 @@ export default function SavedPostsPage() {
           .eq("id", savedPost.post_id)
           .single();
 
+        type PostRow = {
+          id: string;
+          user_id: string;
+          content: string;
+          image_url: string | null;
+          gif_url: string | null;
+          created_at: string;
+        };
+
         if (!post) {
           return null;
         }
 
+        const typedPost = post as PostRow;
+
         // Fetch the author profile separately
-        // Note: profiles table might not have username column, so we'll fetch what's available
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("id, full_name, avatar_url, is_verified")
-          .eq("id", post.user_id)
+          .select("id, full_name, username, avatar_url, is_verified")
+          .eq("id", typedPost.user_id)
           .single();
 
+        type ProfileRow = {
+          id: string;
+          full_name: string | null;
+          username: string | null;
+          avatar_url: string | null;
+          is_verified: boolean | null;
+        };
+
         if (profileError) {
-          console.error("Error fetching profile for post:", post.id, profileError);
+          console.error("Error fetching profile for post:", typedPost.id, profileError);
         }
 
-        console.log("Post:", post.id, "Profile:", profile);
+        const typedProfile = profile as ProfileRow | null;
+
+        console.log("Post:", typedPost.id, "Profile:", typedProfile);
 
         // Combine post with profile
         const postWithProfile = {
-          ...post,
-          profiles: profile,
+          ...typedPost,
+          profiles: typedProfile,
         };
 
         // Get like count

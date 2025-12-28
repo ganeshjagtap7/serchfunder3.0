@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { Avatar } from "@/app/components/ui/Avatar";
 import { VerifiedBadge } from "@/app/components/ui/VerifiedBadge";
+import { extractMentions } from "@/lib/mentions";
 
 type Profile = {
   id: string;
@@ -28,6 +29,42 @@ export default function CommentsSection({ postId }: { postId: string }) {
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleCommentMentions = async (commentId: string, content: string, authorId: string) => {
+    try {
+      const mentions = extractMentions(content);
+      if (mentions.length === 0) return;
+
+      // Resolve usernames to user IDs
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .in("username", mentions);
+
+      type ProfileRow = { id: string; username: string | null };
+      const typedProfiles = (profiles || []) as ProfileRow[];
+
+      if (typedProfiles.length === 0) return;
+
+      // Create mention notifications (excluding self-mentions)
+      const notifications = typedProfiles
+        .filter((profile) => profile.id !== authorId)
+        .map((profile) => ({
+          user_id: profile.id,
+          actor_id: authorId,
+          type: "mention" as const,
+          entity_type: "comment",
+          entity_id: commentId,
+          is_read: false,
+        }));
+
+      if (notifications.length > 0) {
+        await supabase.from("notifications").insert(notifications as any);
+      }
+    } catch (error) {
+      console.error("Error creating mention notifications:", error);
+    }
+  };
 
   const loadComments = async () => {
     setLoading(true);
@@ -82,12 +119,60 @@ export default function CommentsSection({ postId }: { postId: string }) {
         user_id: user.id,
         content,
       } as any)
-      .select("*")
+      .select("id")
       .single();
+
+    type NewCommentRow = { id: string };
+    const typedComment = data as NewCommentRow | null;
 
     if (error) {
       setError(error.message);
-    } else if (data) {
+    } else if (typedComment) {
+      // Handle mentions (non-blocking)
+      if (typedComment.id && content) {
+        handleCommentMentions(typedComment.id, content, user.id).catch((err: any) => {
+          console.error("Failed to create mention notifications:", err);
+        });
+      }
+
+      // Create reply notification (non-blocking)
+      if (typedComment.id) {
+        (async () => {
+          try {
+            // Fetch post author
+            const { data: post } = await supabase
+              .from("posts")
+              .select("user_id")
+              .eq("id", postId)
+              .single();
+
+            type PostRow = { user_id: string };
+            const typedPost = post as PostRow | null;
+            const postAuthorId = typedPost?.user_id;
+
+            // Create notification (exclude self-replies)
+            if (postAuthorId && postAuthorId !== user.id) {
+              const { error: notifError } = await supabase
+                .from("notifications")
+                .insert({
+                  user_id: postAuthorId,
+                  actor_id: user.id,
+                  type: "reply",
+                  entity_type: "post",
+                  entity_id: postId,
+                  is_read: false,
+                } as any);
+
+              if (notifError) {
+                console.error("Failed to create reply notification:", notifError);
+              }
+            }
+          } catch (err) {
+            console.error("Failed to create reply notification:", err);
+          }
+        })();
+      }
+
       // Reload to get profile info
       loadComments();
       setContent("");

@@ -2,6 +2,38 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Handle /@username rewrite to /username
+  if (pathname.startsWith("/@") && pathname.length > 2) {
+    const username = pathname.slice(2); // Remove /@
+
+    // Only rewrite if it's not a known route
+    const knownRoutes = [
+      "/dashboard",
+      "/posts",
+      "/notifications",
+      "/messages",
+      "/groups",
+      "/explore",
+      "/resources",
+      "/users",
+      "/profile",
+      "/login",
+      "/register",
+      "/auth",
+      "/api",
+    ];
+
+    const isKnownRoute = knownRoutes.some((route) => username.startsWith(route.slice(1)));
+
+    if (!isKnownRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${username}`;
+      return NextResponse.rewrite(url);
+    }
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
