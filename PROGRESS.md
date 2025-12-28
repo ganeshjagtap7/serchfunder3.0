@@ -613,12 +613,34 @@ _No known issues at this time_
 - All mention handling uses `lib/mentions.ts` helper
 - Non-blocking notification creation (IIFE pattern)
 - Self-notification filtering in all notification types
+- **Username Display Fix** 🔧
+- Fixed ProfileHeader showing fake placeholder usernames
+- Issue: Username was generated from `full_name` instead of using database value
+- Changed from: `@{profile.full_name?.toLowerCase().replace(/\s+/g, '_')}`
+- Changed to: `@{profile.username}` (actual database username)
+- Updated all Profile type interfaces to include `username` field
+- Updated all profile queries to SELECT `username` from database
+- Files fixed:
+  - `app/components/profile/ProfileHeader.tsx` - Display logic
+  - `app/[username]/page.tsx` - Username profile route
+  - `app/users/[id]/page.tsx` - User ID profile route
+  - `app/profile/page.tsx` - Current user profile route
+- Now displays real usernames: `@ganeshjagtap006`, `@vaishnaviuphad`, etc.
+- **Mention Notifications Debugging** 🐛
+- Added comprehensive debug logging to `handlePostMentions` function
+- Logs track: mention extraction, profile lookup, notification creation
+- Confirmed mention notification system working correctly
+- Self-mention filtering working (no notifications when mentioning yourself)
+- Username validation: mentions only work with actual database usernames
+- Debug logs show emoji indicators for easy tracking: 🚀 📝 💬 ⚠️
 - **Build Status** ✅
 - Build passing with zero TypeScript errors
 - All routes working: `/@username`, `/users/[id]`, `/profile`
 - Notifications loading successfully with actor profiles and posts
 - Username system fully functional with collision handling
 - Profile URLs accessible and shareable
+- Mention notifications verified and working
+- Real database usernames displayed across all profile pages
 - **Deployment** 🚀
 - Successfully deployed to Vercel production
 - Environment variables configured:

@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 interface Profile {
   id: string;
   full_name: string | null;
+  username: string | null;
   avatar_url: string | null;
   banner_url: string | null;
   role: string;
@@ -269,7 +270,7 @@ export default function ProfileHeader({
             {profile.is_verified && <VerifiedBadge />}
           </div>
           <p className="text-slate-500 text-sm">
-            @{profile.full_name?.toLowerCase().replace(/\s+/g, '_') || 'user'}
+            @{profile.username || 'user'}
           </p>
         </div>
 

@@ -12,6 +12,7 @@ import ProfileRightSidebar from "@/app/components/profile/ProfileRightSidebar";
 type Profile = {
   id: string;
   full_name: string | null;
+  username: string | null;
   avatar_url: string | null;
   banner_url: string | null;
   role: string;
@@ -58,7 +59,7 @@ export default function UserProfilePage() {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url, banner_url, role, bio, is_verified, location, website, linkedin_url, education, work, created_at")
+      .select("id, full_name, username, avatar_url, banner_url, role, bio, is_verified, location, website, linkedin_url, education, work, created_at")
       .eq("id", userId)
       .single();
 

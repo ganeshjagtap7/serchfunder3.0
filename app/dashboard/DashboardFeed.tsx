@@ -43,19 +43,31 @@ export default function DashboardFeed() {
 
   const handlePostMentions = async (postId: string, content: string, authorId: string) => {
     try {
+      console.log("handlePostMentions called with:", { postId, content, authorId });
+
       const mentions = extractMentions(content);
-      if (mentions.length === 0) return;
+      console.log("Extracted mentions:", mentions);
+
+      if (mentions.length === 0) {
+        console.log("No mentions found, returning early");
+        return;
+      }
 
       // Resolve usernames to user IDs
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profileError } = await supabase
         .from("profiles")
         .select("id, username")
         .in("username", mentions);
 
+      console.log("Profile lookup result:", { profiles, profileError });
+
       type ProfileRow = { id: string; username: string | null };
       const typedProfiles = (profiles || []) as ProfileRow[];
 
-      if (typedProfiles.length === 0) return;
+      if (typedProfiles.length === 0) {
+        console.log("No profiles found for mentions");
+        return;
+      }
 
       // Create mention notifications (excluding self-mentions)
       const notifications = typedProfiles
@@ -69,8 +81,11 @@ export default function DashboardFeed() {
           is_read: false,
         }));
 
+      console.log("Notifications to create:", notifications);
+
       if (notifications.length > 0) {
-        await supabase.from("notifications").insert(notifications as any);
+        const { data, error } = await supabase.from("notifications").insert(notifications as any);
+        console.log("Notification insert result:", { data, error });
       }
     } catch (error) {
       console.error("Error creating mention notifications:", error);
@@ -122,6 +137,7 @@ export default function DashboardFeed() {
   };
 
   useEffect(() => {
+    console.log("🚀 DashboardFeed component mounted - mention notifications ready");
     loadPosts();
   }, []);
 
@@ -129,6 +145,8 @@ export default function DashboardFeed() {
 
   const handleCreatePost = async (e: FormEvent, gifUrl?: string | null) => {
     e.preventDefault();
+
+    console.log("📝 handleCreatePost called with content:", content);
 
     // Guard: Block if not logged in
     if (!currentUserId) {
@@ -168,9 +186,12 @@ export default function DashboardFeed() {
 
     // Handle mentions (non-blocking)
     if (typedPost?.id && content) {
+      console.log("💬 About to call handlePostMentions for post:", typedPost.id);
       handlePostMentions(typedPost.id, content, currentUserId).catch((err: any) => {
         console.error("Failed to create mention notifications:", err);
       });
+    } else {
+      console.log("⚠️ Skipping handlePostMentions - typedPost.id:", typedPost?.id, "content:", content);
     }
 
     // Notify followers about new post (non-blocking)
