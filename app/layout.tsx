@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Searchfunder - Social Feed",
+  title: "InsideAquisitions - Social Feed",
   description: "Community platform for searchers and investors",
 };
 

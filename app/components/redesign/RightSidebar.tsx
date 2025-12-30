@@ -29,7 +29,7 @@ export default function RightSidebar() {
         <span className="material-symbols-outlined text-slate-500 group-focus-within:text-primary">search</span>
         <input
           type="text"
-          placeholder="Search Searchfunder"
+          placeholder="Search InsideAquisitions"
           className="bg-transparent border-none focus:ring-0 p-0 text-sm w-full text-slate-900 dark:text-white placeholder-slate-500"
         />
       </div>

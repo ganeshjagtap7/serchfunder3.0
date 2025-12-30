@@ -97,7 +97,7 @@ export default function TrendingNetwork() {
         <a className="hover:underline" href="#">
           Ads info
         </a>
-        <span className="mt-1">© 2024 Searchfunder, Inc.</span>
+        <span className="mt-1">© 2024 InsideAquisitions, Inc.</span>
       </nav>
     </div>
   );

@@ -15,7 +15,7 @@ export default function Header() {
           </svg>
         </div>
         <h2 className="hidden md:block text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">
-          Searchfunder
+          InsideAquisitions
         </h2>
       </div>
 

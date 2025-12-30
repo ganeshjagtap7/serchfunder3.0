@@ -49,10 +49,10 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">S</span>
+              <span className="text-primary-foreground font-bold text-lg">I</span>
             </div>
             <h1 className="text-xl font-bold text-foreground tracking-tight">
-              Searchfunder
+              InsideAquisitions
             </h1>
           </Link>
 

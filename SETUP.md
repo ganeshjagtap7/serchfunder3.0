@@ -1,4 +1,4 @@
-# Searchfunder 3.0 - Setup & Run Guide
+# InsideAquisitions 3.0 - Setup & Run Guide
 
 ## Prerequisites
 

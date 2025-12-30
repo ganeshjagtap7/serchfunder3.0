@@ -1,9 +1,9 @@
-# 🚀 SearchFunder 3.0 - Development Progress Tracker
+# 🚀 InsideAquisitions 3.0 - Development Progress Tracker
 
 **Last Updated:** December 28, 2024
 **Project Status:** ✅ Phase 1 Complete | Phase 2 In Progress
 **Current Version:** v1.1.9
-**Repository:** https://github.com/ganeshjagtap7/serchfunder3.0
+**Repository:** https://github.com/ganeshjagtap7/insideaquisitions3.0
 
 ---
 
@@ -242,7 +242,7 @@
 ## 📁 Project Structure
 
 ```
-serchfunder3.0/
+insideaquisitions3.0/
 ├── app/
 │   ├── (auth)/
 │   │   ├── callback/
@@ -292,7 +292,7 @@ serchfunder3.0/
 - ✅ No warnings or errors
 - ✅ All routes render correctly
 - ✅ Static and dynamic routes configured
-- ✅ **Deployed to Vercel** - Live at https://serchfunder3-0.vercel.app
+- ✅ **Deployed to Vercel** - Live at https://insideaquisitions3-0.vercel.app
 - ✅ Production environment variables configured
 - ✅ Automatic deployments on main branch push
 - ✅ All features working in production
@@ -486,13 +486,13 @@ _No known issues at this time_
 
 - **Lead Developer:** Claude Sonnet 4.5
 - **Product Owner:** Ganesh Jagtap
-- **Repository:** https://github.com/ganeshjagtap7/serchfunder3.0
+- **Repository:** https://github.com/ganeshjagtap7/insideaquisitions3.0
 
 ---
 
 ## 📞 Support & Resources
 
-- **Issues:** https://github.com/ganeshjagtap7/serchfunder3.0/issues
+- **Issues:** https://github.com/ganeshjagtap7/insideaquisitions3.0/issues
 - **Discussions:** TBD
 - **Wiki:** TBD
 
@@ -703,7 +703,7 @@ _No known issues at this time_
   - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
   - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for admin operations
-- Live URL: https://serchfunder3-0.vercel.app
+- Live URL: https://insideaquisitions3-0.vercel.app
 - Automatic deployments on git push to main branch
 - Production build successful with all features working
 

@@ -1,8 +1,8 @@
-# SearchFunder 3.0 - Weekly Progress Report
+# InsideAquisitions 3.0 - Weekly Progress Report
 **Period:** December 16-22, 2024
 **Developer:** Ganesh Jagtap
-**Project:** SearchFunder 3.0 (Social Platform for Business Acquisitions)
-**Repository:** https://github.com/ganeshjagtap7/serchfunder3.0
+**Project:** InsideAquisitions 3.0 (Social Platform for Business Acquisitions)
+**Repository:** https://github.com/ganeshjagtap7/insideaquisitions3.0
 
 ---
 
@@ -341,7 +341,7 @@ This week focused on enhancing the user profile system and completing the direct
 ## Features Delivered
 
 ### 1. LinkedIn Profile Integration
-**User Story:** As a user, I want to add my LinkedIn profile to my SearchFunder profile so others can connect with me professionally.
+**User Story:** As a user, I want to add my LinkedIn profile to my InsideAquisitions profile so others can connect with me professionally.
 
 **Acceptance Criteria:**
 - ✅ LinkedIn URL field in edit profile mode
@@ -633,7 +633,7 @@ ecfdbca - feat: Implement Twitter/X-style icons and profile feed tabs (Dec 21)
 
 ## Conclusion
 
-This week delivered significant value to the SearchFunder 3.0 platform:
+This week delivered significant value to the InsideAquisitions 3.0 platform:
 
 ✅ **User Profiles Enhanced** - LinkedIn, education, and work fields add professional credibility
 ✅ **Messaging Fully Functional** - Users can now reliably send and receive direct messages

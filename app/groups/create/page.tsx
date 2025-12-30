@@ -71,7 +71,7 @@ export default function CreateGroupPage() {
               className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Example: Searchfunders in India"
+              placeholder="Example: InsideAquisitions in India"
             />
           </div>
 

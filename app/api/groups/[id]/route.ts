@@ -1,17 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Create a Supabase client with service role for admin operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!, // This bypasses RLS
-  {
+// Helper function to create Supabase admin client
+function createSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Supabase configuration is missing. Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.');
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
     }
-  }
-);
+  });
+}
 
 // PATCH /api/groups/[id] - Update group name or description
 export async function PATCH(
@@ -30,6 +35,9 @@ export async function PATCH(
         { status: 400 }
       );
     }
+
+    // Create Supabase admin client
+    const supabaseAdmin = createSupabaseAdmin();
 
     // Verify user is the owner
     const { data: group, error: fetchError } = await supabaseAdmin

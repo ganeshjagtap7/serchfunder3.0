@@ -104,7 +104,7 @@ export default function ProfileRightSidebar() {
         <a className="hover:underline" href="#">Cookie Policy</a>
         <a className="hover:underline" href="#">Accessibility</a>
         <a className="hover:underline" href="#">Ads info</a>
-        <span>© 2024 Searchfunder Inc.</span>
+        <span>© 2024 InsideAquisitions Inc.</span>
       </div>
     </>
   );
